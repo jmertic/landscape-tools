@@ -17,9 +17,11 @@ config = Config("config.yaml")
 sfdcmembers = SFDCMembers(loadData = False, sf_username = config.sf_username, sf_password = config.sf_password, sf_token = config.sf_token)
 sfdcmembers.project = config.project
 sfdcmembers.loadData()
-lfwmembers  = LFWebsiteMembers(loadData = True)
-cbmembers   = CrunchbaseMembers(loadData = False)
-lsmembers   = LandscapeMembers(loadData = True)
+lfwmembers = LFWebsiteMembers(loadData = True)
+cbmembers = CrunchbaseMembers(loadData = False)
+lsmembers = LandscapeMembers(loadData = False)
+lsmembers.skipLandscapes = [config.landscapeName]
+lsmembers.loadData()
 #csvmembers  = CsvMembers(loadData = True, csvfile = config.missingcsvfile)
 lflandscape = LandscapeOutput()
 lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
@@ -33,7 +35,7 @@ for member in sfdcmembers.members:
     print("Processing "+member.orgname)
     for memberClass in lflandscape.landscapeMembers:
         landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
-        if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ):
+        if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ) and ( memberClass['name'] == landscapeMemberClass['category'] ) :
             # lookup in other landscapes
             lookupmember = lsmembers.find(member.orgname, member.website)
             if lookupmember:
@@ -48,10 +50,10 @@ for member in sfdcmembers.members:
                 # overlay lfwebsite data
                 lfwmember = lfwmembers.find(member.orgname,member.website)
                 if lfwmember:
-                    if lfwmember.logo is not None and lfwmember.logo != '':
+                    if member.logo is None and lfwmember.logo is not None and lfwmember.logo != '':
                         print("...Updating logo from LF website")
                         member.logo = lfwmember.logo
-                    if lfwmember.website is not None and lfwmember.website != '':
+                    if member.website is None and lfwmember.website is not None and lfwmember.website != '':
                         print("...Updating website from LF website")
                         member.website = lfwmember.website
                 # overlay crunchbase data

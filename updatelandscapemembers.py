@@ -15,9 +15,11 @@ config = Config("config.yaml")
 
 # load member data sources
 sfdcmembers = SFDCMembers(loadData = True, sf_username = config.sf_username, sf_password = config.sf_password, sf_token = config.sf_token)
-lfwmembers  = LFWebsiteMembers(loadData = True)
-cbmembers   = CrunchbaseMembers(loadData = True)
-lsmembers   = LandscapeMembers(loadData = True)
+lfwmembers = LFWebsiteMembers(loadData = True)
+cbmembers = CrunchbaseMembers(loadData = True)
+lsmembers = LandscapeMembers(loadData = False)
+lsmembers.skipLandscapes = [config.landscapeName]
+lsmembers.loadData()
 #csvmembers  = CsvMembers(loadData = True)
 lflandscape = LandscapeOutput(loadLandscape = True)
 
