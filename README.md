@@ -1,5 +1,7 @@
 # Landscape Tools
 
+![](https://github.com/jmertic/landscape-tools/workflows/CI/badge.svg)
+
 This project contains some tools for making it easier to build and maintain a [landscape](https://github.com/cncf/landscapeapp).
 
 Current tools are:
