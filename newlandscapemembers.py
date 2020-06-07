@@ -42,7 +42,8 @@ for member in sfdcmembers.members:
                 print("...Data from other landscape")
                 for key, value in lookupmember.toLandscapeItemAttributes().items():
                     try:
-                        setattr(member, key, value)
+                        if not hasattr(member,key) or not getattr(member,key):
+                            setattr(member, key, value)
                     except ValueError as e:
                         print(e)
             else:
