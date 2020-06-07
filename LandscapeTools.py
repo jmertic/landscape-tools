@@ -87,8 +87,10 @@ class Member:
     @crunchbase.setter
     def crunchbase(self, crunchbase):
         if crunchbase is None:
+            self._validCrunchbase = False
             raise ValueError("Member.crunchbase must be not be blank for {orgname}".format(orgname=self.orgname))
         if not crunchbase.startswith('https://www.crunchbase.com/organization/'):
+            self._validCrunchbase = False
             raise ValueError("Member.crunchbase for {orgname} must be set to a valid crunchbase url - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
 
         self._validCrunchbase = True
@@ -101,10 +103,12 @@ class Member:
     @website.setter
     def website(self, website):
         if website is None:
+            self._validWebsite = False
             raise ValueError("Member.website must be not be blank for {orgname}".format(orgname=self.orgname))
 
         normalizedwebsite = url_normalize(get_fld(url_normalize(website), fail_silently=True), default_scheme='https')
         if not normalizedwebsite:
+            self._validWebsite = False
             raise ValueError("Member.website for {orgname} must be set to a valid website - '{website}' provided".format(website=website,orgname=self.orgname))
 
         self._validWebsite = True
@@ -117,9 +121,11 @@ class Member:
     @logo.setter
     def logo(self, logo):
         if logo is None:
+            self._validLogo = False
             raise ValueError("Member.logo must be not be blank for {orgname}".format(orgname=self.orgname))
 
         if not os.path.splitext(logo)[1] == '.svg':
+            self._validLogo = False
             raise ValueError("Member.logo for {orgname} must be an svg file - '{logo}' provided".format(logo=logo,orgname=self.orgname))
 
         self._validLogo = True
