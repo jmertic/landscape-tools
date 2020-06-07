@@ -157,7 +157,6 @@ class TestMembers(unittest.TestCase):
         self.assertTrue(members.find('dog',member.website))
         self.assertTrue(members.find(member.orgname,'https://bar.com'))
 
-
     def testFindFail(self):
         member = Member()
         member.orgname = 'test'
@@ -175,7 +174,6 @@ class TestMembers(unittest.TestCase):
         self.assertEqual(members.normalizeCompany(None),'')
 
     def testNormalizeCompany(self):
-
         companies = [
             {"name":"Foo","normalized":"Foo"},
             {"name":"Foo Inc.","normalized":"Foo"}
@@ -185,6 +183,36 @@ class TestMembers(unittest.TestCase):
             members = Members()
             self.assertEqual(members.normalizeCompany(company["name"]),company["normalized"])
 
+class TestSFDCMembers(unittest.TestCase):
+
+    def testFind(self):
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.membership = 'Gold'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+
+        members = SFDCMembers()
+        members.members.append(member)
+
+        self.assertTrue(members.find(member.orgname,member.website,member.membership))
+        self.assertTrue(members.find('dog',member.website,member.membership))
+        self.assertTrue(members.find(member.orgname,'https://bar.com',member.membership))
+
+    def testFindFail(self):
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.membership = 'Gold'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+
+        members = SFDCMembers()
+        members.members.append(member)
+
+        self.assertFalse(members.find('dog','https://bar.com',member.membership))
+        self.assertFalse(members.find(member.orgname,member.website,'Silver'))
 
 if __name__ == '__main__':
     unittest.main()

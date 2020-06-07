@@ -265,7 +265,7 @@ class SFDCMembers(Members):
         normalizedwebsite = self.normalizeURL(website)
 
         for member in self.members:
-            if ( self.normalizeCompany(member.org) == normalizedorg or member.website == website) and member.membership == membership:
+            if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
                 return member
 
         return False
