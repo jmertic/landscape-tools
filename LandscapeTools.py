@@ -155,6 +155,8 @@ class Member:
 #
 class Members:
 
+    members = []
+
     def __init__(self, loadData = False):
         if loadData:
             self.loadData()
@@ -213,7 +215,6 @@ class Members:
 
 class SFDCMembers(Members):
 
-    members = []
     sf_username = None
     sf_password = None
     sf_token = None
@@ -271,7 +272,6 @@ class SFDCMembers(Members):
 
 class LandscapeMembers(Members):
 
-    members = []
     landscapeListYAML = 'https://raw.githubusercontent.com/cncf/landscapeapp/master/landscapes.yml'
     landscapeSettingsYAML = 'https://raw.githubusercontent.com/{repo}/master/settings.yml'
     landscapeLandscapeYAML = 'https://raw.githubusercontent.com/{repo}/master/landscape.yml'
@@ -349,7 +349,6 @@ class LandscapeMembers(Members):
 
 class CrunchbaseMembers(Members):
 
-    members = []
     crunchbaseKey = ''
     bulkdata = True
     bulkdatafile = 'organizations.csv'
@@ -429,7 +428,6 @@ class CrunchbaseMembers(Members):
 
 class LFWebsiteMembers(Members):
 
-    members = []
     lfwebsiteurl = 'https://www.linuxfoundation.org/membership/members/'
 
     def loadData(self):
@@ -461,7 +459,6 @@ class LFWebsiteMembers(Members):
 
 class CsvMembers(Members):
 
-    members = []
     csvfile = 'missing.csv'
 
     def __init__(self, csvfile = None, loadData = False):
