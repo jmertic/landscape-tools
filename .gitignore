@@ -3,3 +3,6 @@
 *.csv
 *.txt
 __pycache__
+
+# add back in for packaging
+!requirements.txt

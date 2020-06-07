@@ -7,6 +7,15 @@ Current tools are:
 - [newlandscapemembers.py](newlandscapemembers.py) - Create a new landscape.yml file with members populated. Leverages LF SFDC as the primary data source for members include, and uses Crunchbase, the LF website, and [other landscapes](https://github.com/cncf/landscapeapp/blob/master/landscapes.yml) as secondary data sources for data enrichment.
 - [updatelandscapemembers.py](updatelandscapemembers.py) - Updates an existing landscape.yml file with not included; does not update existing members. Leverages LF SFDC as the primary data source for members include, and uses Crunchbase, the LF website, and [other landscapes](https://github.com/cncf/landscapeapp/blob/master/landscapes.yml) as secondary data sources for data enrichment.
 
+## Installation
+
+```
+git clone https://github.com/jmertic/landscape-tools
+cd landscape-tools
+chmod +x *.py
+pip install -r requirements.txt
+```
+
 ## Configuration
 
 All of the scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables. Settings are below...
@@ -32,3 +41,7 @@ missingcsvfile: # filename to use for the list of entries with missing parts ( s
 ```
 
 In addition, this depends on `CRUNCHBASE_KEY` being set to a valid key.
+
+## Contributing
+
+Feel free to send [issues](/issues) or [pull requests](/pulls) ( with a DCO signoff of course :-) ) in accordance with the [contribution guidelines](CONTRIBUTING.md)
