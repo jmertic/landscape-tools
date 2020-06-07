@@ -497,6 +497,7 @@ class LandscapeOutput:
     landscapeMembers = []
     missingcsvfile = 'missing.csv'
     _missingcsvfilewriter = None
+    hostedLogosDir = '../hosted_logos/'
 
     landscapeMemberCategory = 'LF Member Company'
     landscapeMemberClasses = [
@@ -559,7 +560,7 @@ class LandscapeOutput:
             i = i + 1
 
         r = requests.get(logo, allow_redirects=True)
-        open("../hosted_logos/"+filename+".svg", 'wb').write(r.content)
+        open(self.hostedLogosDir+"/"+filename+".svg", 'wb').write(r.content)
 
         return filename+".svg"
 
