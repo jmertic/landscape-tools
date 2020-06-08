@@ -247,6 +247,7 @@ e1393508-30ea-8a36-3f96dd3226033abd,Wetpaint,organization,wetpaint,https://www.c
 
         os.unlink(tmpfilename.name)
 
+    @unittest.mock.patch.dict(os.environ,{'CRUNCHBASE_KEY':'gotit'})
     def testLookupCrunchbaseKeyEnv(self):
         with unittest.mock.patch.object(os, 'getenv', return_value="gotit") as mock_method:
             members = CrunchbaseMembers(bulkdata = False)
