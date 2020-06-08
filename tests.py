@@ -217,6 +217,33 @@ class TestSFDCMembers(unittest.TestCase):
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
         self.assertFalse(members.find(member.orgname,member.website,'Silver'))
 
+class TestLandscapeMembers(unittest.TestCase):
+
+    def testNormalizeLogo(self):
+        members = LandscapeMembers()
+        self.assertEqual(
+            'https://raw.githubusercontent.com/dog/cat/master/hosted_logos/mouse.svg',
+            members.normalizeLogo('mouse.svg','dog/cat')
+        )
+
+    def testNormalizeLogoIsEmpty(self):
+        members = LandscapeMembers()
+        self.assertEqual(
+            '',
+            members.normalizeLogo('','dog/cat')
+        )
+        self.assertEqual(
+            '',
+            members.normalizeLogo(None,'dog/cat')
+        )
+
+    def testNormalizeLogoIsURL(self):
+        members = LandscapeMembers()
+        self.assertEqual(
+            'https://foo.com/mouse.svg',
+            members.normalizeLogo('https://foo.com/mouse.svg','dog/cat')
+        )
+
 class TestCrunchbaseMembers(unittest.TestCase):
 
     def testLoadDataNotBulkData(self):

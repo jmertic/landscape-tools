@@ -339,7 +339,7 @@ class LandscapeMembers(Members):
                             self.members.append(member)
 
     def normalizeLogo(self, logo, landscapeRepo):
-        if logo is None:
+        if logo is None or logo == '':
             return ""
 
         if 'https://' in logo or 'http://' in logo:
