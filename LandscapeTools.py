@@ -558,7 +558,7 @@ class LandscapeOutput:
         filename = str(orgname).strip().replace(' ', '_')
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         i = 1
-        while os.path.isfile("../hosted_logos/"+filename+".svg"):
+        while os.path.isfile(self.hostedLogosDir+"/"+filename+".svg"):
             filename = filename+"_"+str(i)
             i = i + 1
 
