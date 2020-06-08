@@ -350,7 +350,7 @@ class LandscapeMembers(Members):
 class CrunchbaseMembers(Members):
 
     crunchbaseKey = ''
-    bulkdata = True
+    bulkdata = False
     bulkdatafile = 'organizations.csv'
 
     def __init__(self, crunchbaseKey = None, bulkdata = True, bulkdatafile = None, loadData = False):
