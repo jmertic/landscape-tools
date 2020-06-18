@@ -8,6 +8,7 @@ Current tools are:
 
 - [newlandscapemembers.py](newlandscapemembers.py) - Create a new landscape.yml file with members populated. Leverages LF SFDC as the primary data source for members include, and uses Crunchbase, the LF website, and [other landscapes](https://github.com/cncf/landscapeapp/blob/master/landscapes.yml) as secondary data sources for data enrichment.
 - [updatelandscapemembers.py](updatelandscapemembers.py) - Updates an existing landscape.yml file with not included; does not update existing members. Leverages LF SFDC as the primary data source for members include, and uses Crunchbase, the LF website, and [other landscapes](https://github.com/cncf/landscapeapp/blob/master/landscapes.yml) as secondary data sources for data enrichment.
+- [makememberprojectlogos.sh](makememberprojectlogos.sh) - Creates uniform project/product logos for an organization where they don't have a specific logo to use.
 
 ## Installation
 
@@ -20,7 +21,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-All of the scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables. Settings are below...
+All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables. Settings are below...
 
 ```yaml
 sf_username: # LF SFDC username
