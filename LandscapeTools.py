@@ -11,12 +11,16 @@ import sys
 import re
 import os
 import os.path
+import json
+from os.path import normpath, basename
 from datetime import datetime
+from pathlib import Path
+from abc import ABC, abstractmethod
 
 # third party modules
 from yaml.representer import SafeRepresenter
 import ruamel.yaml
-from ruamel import yaml
+from ruamel.yaml import YAML
 import requests
 import validators
 from bs4 import BeautifulSoup
@@ -37,7 +41,7 @@ class Config:
         if config_file != '' and os.path.isfile(config_file):
             try:
                 with open(config_file, 'r') as stream:
-                    data_loaded = yaml.safe_load(stream)
+                    data_loaded = ruamel.yaml.safe_load(stream)
             except:
                 sys.exit(config_file+" config file is not defined")
 
@@ -150,17 +154,17 @@ class Member:
     def isValidLandscapeItem(self):
         return self._validWebsite and self._validLogo and self._validCrunchbase and self.orgname != ''
 
+
 #
 # Abstract Members class to normalize the methods used for the other ways of getting a member's info
 #
-class Members:
-
-    members = []
+class Members(ABC):
 
     def __init__(self, loadData = False):
         if loadData:
             self.loadData()
 
+    @abstractmethod
     def loadData(self):
         pass
 
@@ -215,6 +219,7 @@ class Members:
 
 class SFDCMembers(Members):
 
+    members = []
     sf_username = None
     sf_password = None
     sf_token = None
@@ -235,6 +240,9 @@ class SFDCMembers(Members):
         result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Project__c = '{project}'".format(project=self.project))
 
         for record in result['records']:
+            if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
+                continue
+
             member = Member()
             try:
                 member.orgname = record['Account']['Name']
@@ -272,6 +280,7 @@ class SFDCMembers(Members):
 
 class LandscapeMembers(Members):
 
+    members = []
     landscapeListYAML = 'https://raw.githubusercontent.com/cncf/landscapeapp/master/landscapes.yml'
     landscapeSettingsYAML = 'https://raw.githubusercontent.com/{repo}/master/settings.yml'
     landscapeLandscapeYAML = 'https://raw.githubusercontent.com/{repo}/master/landscape.yml'
@@ -287,7 +296,7 @@ class LandscapeMembers(Members):
         print("--Loading other landscape members data--")
 
         response = requests.get(self.landscapeListYAML)
-        landscapeList = yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+        landscapeList = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
 
         for landscape in landscapeList['landscapes']:
             if landscape in self.skipLandscapes:
@@ -297,12 +306,12 @@ class LandscapeMembers(Members):
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
-            settingsYaml = yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+            settingsYaml = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
             membershipKey = settingsYaml['global']['membership']
 
             # then load in members only
             response = requests.get(self.landscapeLandscapeYAML.format(repo=landscape['repo']))
-            landscapeYaml = yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+            landscapeYaml = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
             for category in landscapeYaml['landscape']:
                 if membershipKey in category['name']:
                     for subcategory in category['subcategories']:
@@ -335,7 +344,7 @@ class LandscapeMembers(Members):
                                 member.crunchbase = item['crunchbase']
                             except ValueError as e:
                                 pass
-
+                            
                             self.members.append(member)
 
     def normalizeLogo(self, logo, landscapeRepo):
@@ -349,22 +358,19 @@ class LandscapeMembers(Members):
 
 class CrunchbaseMembers(Members):
 
+    members = []
     crunchbaseKey = ''
     bulkdata = False
     bulkdatafile = 'organizations.csv'
 
-    def __init__(self, crunchbaseKey = None, bulkdata = True, bulkdatafile = None, loadData = False):
+    def __init__(self, bulkdata = True, bulkdatafile = None, loadData = False):
         if bulkdata:
             self.bulkdata = bulkdata
         if bulkdatafile:
             self.bulkdatafile = bulkdatafile
         if self.bulkdata:
             super().__init__(loadData)
-        else:
-            if crunchbaseKey:
-                self.crunchbaseKey = crunchbaseKey
-            elif 'CRUNCHBASE_KEY' in os.environ:
-                self.crunchbaseKey = os.getenv('CRUNCHBASE_KEY')
+
 
     def loadData(self):
         # load from bulk export file contents
@@ -396,6 +402,8 @@ class CrunchbaseMembers(Members):
 
                 self.members.append(member)
 
+
+
     def find(self, org, website):
         if self.bulkdata:
             return super().find(org, website)
@@ -403,6 +411,8 @@ class CrunchbaseMembers(Members):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
+        if not self.crunchbaseKey and 'CRUNCHBASE_KEY' in os.environ:
+            self.crunchbaseKey = os.getenv('CRUNCHBASE_KEY')
         cb = CrunchBase(self.crunchbaseKey)
 
         for result in cb.organizations(org):
@@ -428,6 +438,7 @@ class CrunchbaseMembers(Members):
 
 class LFWebsiteMembers(Members):
 
+    members = []
     lfwebsiteurl = 'https://www.linuxfoundation.org/membership/members/'
 
     def loadData(self):
@@ -459,6 +470,7 @@ class LFWebsiteMembers(Members):
 
 class CsvMembers(Members):
 
+    members = []
     csvfile = 'missing.csv'
 
     def __init__(self, csvfile = None, loadData = False):
@@ -504,14 +516,15 @@ class LandscapeOutput:
 
     landscapeMemberCategory = 'LF Member Company'
     landscapeMemberClasses = [
-        {"name": "Associate Membership", "category": "Associate"},
-        {"name": "Gold Membership", "category": "Gold"},
         {"name": "Platinum Membership", "category": "Platinum"},
+        {"name": "Gold Membership", "category": "Gold"},
         {"name": "Silver Membership", "category": "Silver"},
-        {"name": "Silver Membership - MPSF", "category": "Silver"}
+        {"name": "Silver Membership - MPSF", "category": "Silver"},
+        {"name": "Associate Membership", "category": "Associate"}
     ]
     membersAdded = 0
     membersUpdated = 0
+    membersErrors = 0
 
     def __init__(self, loadLandscape = False):
         if loadLandscape:
@@ -538,7 +551,7 @@ class LandscapeOutput:
                 x['subcategories'] = self.landscapeMembers
 
     def loadLandscape(self):
-        self.landscape = yaml.load(open(self.landscapefile, 'r', encoding="utf8", errors='ignore'), Loader=ruamel.yaml.RoundTripLoader)
+        self.landscape = ruamel.yaml.load(open(self.landscapefile, 'r', encoding="utf8", errors='ignore'), Loader=ruamel.yaml.RoundTripLoader)
         for x in self.landscape['landscape']:
             if x['name'] == self.landscapeMemberCategory:
                 self.landscapeMembers = x['subcategories']
@@ -548,6 +561,7 @@ class LandscapeOutput:
             self._missingcsvfilewriter = csv.writer(open(self.missingcsvfile, mode='w'), delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
             self._missingcsvfilewriter.writerow(['name','logo','homepage_url','crunchbase'])
 
+        self.membersErrors = self.membersErrors + 1
         self._missingcsvfilewriter.writerow([name, logo, homepage_url, crunchbase])
 
     def hostLogo(self,logo,orgname):
@@ -573,7 +587,12 @@ class LandscapeOutput:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
 
-        with open(self.landscapefile, 'w', encoding = "utf-8") as landscapefileoutput:
-            landscapefileoutput.write( yaml.dump(self.landscape, default_flow_style=False, allow_unicode=True, Dumper=ruamel.yaml.RoundTripDumper) )
+        landscapefileoutput = Path(self.landscapefile)
+        ryaml = ruamel.yaml.YAML()
+        ryaml.indent(mapping=2, sequence=4, offset=2)
+        ryaml.default_flow_style = False
+        ryaml.allow_unicode = True
+        ryaml.Dumper = ruamel.yaml.RoundTripDumper
+        ryaml.dump(self.landscape,landscapefileoutput)
 
-        print("Successfully added "+str(self.membersAdded)+" members and updated "+str(self.membersUpdated)+" member entries")
+        print("Successfully added "+str(self.membersAdded)+" members and skipped "+str(self.membersErrors)+" members")

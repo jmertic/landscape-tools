@@ -22,6 +22,7 @@ cbmembers = CrunchbaseMembers(loadData = False)
 lsmembers = LandscapeMembers(loadData = False)
 lsmembers.skipLandscapes = [config.landscapeName]
 lsmembers.loadData()
+
 #csvmembers  = CsvMembers(loadData = True, csvfile = config.missingcsvfile)
 lflandscape = LandscapeOutput()
 lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
@@ -44,6 +45,8 @@ for member in sfdcmembers.members:
                     try:
                         if not hasattr(member,key) or not getattr(member,key):
                             setattr(member, key, value)
+                        if key == 'crunchbase' and value != getattr(member,key):
+                            setattr(member, key, value)
                     except ValueError as e:
                         print(e)
             else:
@@ -57,12 +60,16 @@ for member in sfdcmembers.members:
                     if member.website is None and lfwmember.website is not None and lfwmember.website != '':
                         print("...Updating website from LF website")
                         member.website = lfwmember.website
+                
                 # overlay crunchbase data
-                if not member.crunchbase:
-                    cbmember = cbmembers.find(member.orgname,member.website)
-                    if cbmember:
-                        print("...Updating crunchbase from Crunchbase")
-                        member.crunchbase = cbmember.crunchbase
+                cbmember = cbmembers.find(member.orgname,member.website)
+                if not member.crunchbase and cbmember:
+                    print("...Updating crunchbase from Crunchbase")
+                    member.crunchbase = cbmember.crunchbase
+                elif cbmember and member.crunchbase != cbmember.crunchbase:
+                    print("...Using crunchbase from Crunchbase")
+                    member.crunchbase = cbmember.crunchbase
+                    
 
             # Write out to missing.csv if it's missing key parameters
             if not member.isValidLandscapeItem():
