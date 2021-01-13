@@ -7,11 +7,18 @@
 
 from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LFWebsiteMembers, CsvMembers, LandscapeOutput
 from datetime import datetime
+from argparse import ArgumentParser,FileType
 
 startTime = datetime.now()
 
 # load config
-config = Config("config.yaml")
+parser = ArgumentParser()
+parser.add_argument("-c", "--config", dest="configfile", type=FileType('r'), help="name of YAML config file")
+args = parser.parse_args()
+if args.configfile:
+    config = Config(args.configfile)
+else:
+    config = Config("config.yaml")
 
 # load member data sources
 sfdcmembers = SFDCMembers(loadData = False, sf_username = config.sf_username, sf_password = config.sf_password, sf_token = config.sf_token)

@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables. Settings are below...
+All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables, or passing a `-c` option to the script with a path to the config file. Settings are below...
 
 ```yaml
 sf_username: # LF SFDC username
