@@ -16,6 +16,7 @@ from os.path import normpath, basename
 from datetime import datetime
 from pathlib import Path
 from abc import ABC, abstractmethod
+from urllib.parse import urlparse
 
 # third party modules
 from yaml.representer import SafeRepresenter
@@ -94,8 +95,13 @@ class Member:
             self._validCrunchbase = False
             raise ValueError("Member.crunchbase must be not be blank for {orgname}".format(orgname=self.orgname))
         if not crunchbase.startswith('https://www.crunchbase.com/organization/'):
-            self._validCrunchbase = False
-            raise ValueError("Member.crunchbase for {orgname} must be set to a valid crunchbase url - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
+            # fix the URL if it's not formatted right
+            o = urlparse(crunchbase)
+            if (o.netloc == "crunchbase.com" or o.netloc == "www.crunchbase.com") and o.path.startswith("/organization"):
+                crunchbase = "https://www.crunchbase.com{path}".format(path=o.path)
+            else:
+                self._validCrunchbase = False
+                raise ValueError("Member.crunchbase for {orgname} must be set to a valid crunchbase url - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
 
         self._validCrunchbase = True
         self.__crunchbase = crunchbase
@@ -237,7 +243,7 @@ class SFDCMembers(Members):
     def loadData(self):
         print("--Loading SFDC Members data--")
         sf = Salesforce(username=self.sf_username,password=self.sf_password,security_token=self.sf_token)
-        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.Crunchbase_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Project__c = '{project}'".format(project=self.project))
+        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Project__c = '{project}'".format(project=self.project))
 
         for record in result['records']:
             if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
@@ -261,13 +267,12 @@ class SFDCMembers(Members):
             except ValueError as e:
                 pass
             try:
-                if record['Account']['Crunchbase_Handle__c'] and record['Account']['Crunchbase_Handle__c'] != '':
-                    member.crunchbase = self.crunchbaseURL.format(uri=record['Account']['Crunchbase_Handle__c'])
+                if record['Account']['CrunchBase_URL__c'] and record['Account']['CrunchBase_URL__c'] != '':
+                    member.crunchbase = record['Account']['CrunchBase_URL__c']
                 elif record['Account']['cbit__Clearbit__r'] and record['Account']['cbit__Clearbit__r']['cbit__CompanyCrunchbaseHandle__c']:
                     member.crunchbase = self.crunchbaseURL.format(uri=record['Account']['cbit__Clearbit__r']['cbit__CompanyCrunchbaseHandle__c'])
             except ValueError as e:
                 pass
-
             self.members.append(member)
 
     def find(self, org, website, membership):
@@ -546,17 +551,32 @@ class LandscapeOutput:
                 "name": landscapeMemberClass['category'],
                 "items" : []
             }
-            self.landscapeMembers.append(memberClass)
+            if memberClass not in self.landscapeMembers:
+                self.landscapeMembers.append(memberClass)
 
         for x in self.landscape['landscape']:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
 
-    def loadLandscape(self):
+    def loadLandscape(self, reset=False):
         self.landscape = ruamel.yaml.load(open(self.landscapefile, 'r', encoding="utf8", errors='ignore'), Loader=ruamel.yaml.RoundTripLoader)
-        for x in self.landscape['landscape']:
-            if x['name'] == self.landscapeMemberCategory:
-                self.landscapeMembers = x['subcategories']
+        if reset:
+            for landscapeMemberClass in self.landscapeMemberClasses:
+                memberClass = {
+                    "subcategory": None,
+                    "name": landscapeMemberClass['category'],
+                    "items" : []
+                }
+                if memberClass not in self.landscapeMembers:
+                    self.landscapeMembers.append(memberClass)
+
+            for x in self.landscape['landscape']:
+                if x['name'] == self.landscapeMemberCategory:
+                    x['subcategories'] = self.landscapeMembers
+        else:
+            for x in self.landscape['landscape']:
+                if x['name'] == self.landscapeMemberCategory:
+                    self.landscapeMembers = x['subcategories']
 
     def writeMissing(self, name, logo, homepage_url, crunchbase):
         if self._missingcsvfilewriter is None:
