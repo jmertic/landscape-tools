@@ -166,6 +166,8 @@ class Member:
 #
 class Members(ABC):
 
+    members = []
+
     def __init__(self, loadData = False):
         if loadData:
             self.loadData()
@@ -363,58 +365,15 @@ class LandscapeMembers(Members):
 
         return self.landscapeLogo.format(repo=landscapeRepo,logo=logo)
 
-class CrunchbaseMembers(Members):
+class CrunchbaseAPIMembers(Members):
 
     members = []
     crunchbaseKey = ''
-    bulkdata = False
-    bulkdatafile = 'organizations.csv'
-
-    def __init__(self, bulkdata = True, bulkdatafile = None, loadData = False):
-        if bulkdata:
-            self.bulkdata = bulkdata
-        if bulkdatafile:
-            self.bulkdatafile = bulkdatafile
-        if self.bulkdata:
-            super().__init__(loadData)
-
 
     def loadData(self):
-        # load from bulk export file contents
-        if not self.bulkdata:
-            return False
-
-        print("--Loading Crunchbase bulk export data--")
-        with open(self.bulkdatafile, newline='') as csvfile:
-            memberreader = csv.reader(csvfile, delimiter=',', quotechar='"')
-            fields = next(memberreader)
-            for row in memberreader:
-                member = Member()
-                try:
-                    member.membership = ''
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.orgname = row[1]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.website = row[11]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.crunchbase = row[4]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-
-                self.members.append(member)
-
-
+        return
 
     def find(self, org, website):
-        if self.bulkdata:
-            return super().find(org, website)
-
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
@@ -443,72 +402,39 @@ class CrunchbaseMembers(Members):
 
         return False
 
-class LFWebsiteMembers(Members):
+class CrunchbaseMembers(Members):
 
     members = []
-    lfwebsiteurl = 'https://www.linuxfoundation.org/membership/members/'
+    bulkdatafile = 'organizations.csv'
 
-    def loadData(self):
-        print("--Loading members listed on LF Website--")
-
-        response = requests.get(self.lfwebsiteurl)
-        soup = BeautifulSoup(response.content, "html.parser")
-        companies = soup.find_all("div", class_="single-member-icon")
-        for entry in companies:
-            member = Member()
-            try:
-                member.membership = ''
-            except ValueError as e:
-                pass
-            try:
-                member.orgname = entry.contents[1].contents[0].attrs['alt']
-            except ValueError as e:
-                pass
-            try:
-                member.website = self.normalizeURL(entry.contents[1].attrs['href'])
-            except ValueError as e:
-                pass
-            try:
-                member.logo = entry.contents[1].contents[0].attrs['src']
-            except ValueError as e:
-                pass
-
-            self.members.append(member)
-
-class CsvMembers(Members):
-
-    members = []
-    csvfile = 'missing.csv'
-
-    def __init__(self, csvfile = None, loadData = False):
-        if csvfile:
-            self.csvfile = csvfile
+    def __init__(self, bulkdatafile = None, loadData = False):
+        if bulkdatafile:
+            self.bulkdatafile = bulkdatafile
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading members from csv input file {filename}--".format(filename=self.csvfile))
-
-        with open(self.csvfile, newline='') as csvfile:
+        print("--Loading Crunchbase bulk export data--")
+        with open(self.bulkdatafile, newline='') as csvfile:
             memberreader = csv.reader(csvfile, delimiter=',', quotechar='"')
             fields = next(memberreader)
             for row in memberreader:
                 member = Member()
                 try:
-                    member.orgname = row[0]
+                    member.membership = ''
                 except ValueError as e:
-                    pass
+                    pass # avoids all the Exceptions for logo
                 try:
-                    member.website = row[2]
+                    member.orgname = row[1]
                 except ValueError as e:
-                    pass
+                    pass # avoids all the Exceptions for logo
                 try:
-                    member.logo = row[1]
+                    member.website = row[11]
                 except ValueError as e:
-                    pass
+                    pass # avoids all the Exceptions for logo
                 try:
-                    member.crunchbase = row[3]
+                    member.crunchbase = row[4]
                 except ValueError as e:
-                    pass
+                    pass # avoids all the Exceptions for logo
 
                 self.members.append(member)
 
@@ -559,24 +485,25 @@ class LandscapeOutput:
                 x['subcategories'] = self.landscapeMembers
 
     def loadLandscape(self, reset=False):
-        self.landscape = ruamel.yaml.load(open(self.landscapefile, 'r', encoding="utf8", errors='ignore'), Loader=ruamel.yaml.RoundTripLoader)
-        if reset:
-            for landscapeMemberClass in self.landscapeMemberClasses:
-                memberClass = {
-                    "subcategory": None,
-                    "name": landscapeMemberClass['category'],
-                    "items" : []
-                }
-                if memberClass not in self.landscapeMembers:
-                    self.landscapeMembers.append(memberClass)
+        with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
+            self.landscape = ruamel.yaml.load(fileobject, Loader=ruamel.yaml.RoundTripLoader)
+            if reset:
+                for landscapeMemberClass in self.landscapeMemberClasses:
+                    memberClass = {
+                        "subcategory": None,
+                        "name": landscapeMemberClass['category'],
+                        "items" : []
+                    }
+                    if memberClass not in self.landscapeMembers:
+                        self.landscapeMembers.append(memberClass)
 
-            for x in self.landscape['landscape']:
-                if x['name'] == self.landscapeMemberCategory:
-                    x['subcategories'] = self.landscapeMembers
-        else:
-            for x in self.landscape['landscape']:
-                if x['name'] == self.landscapeMemberCategory:
-                    self.landscapeMembers = x['subcategories']
+                for x in self.landscape['landscape']:
+                    if x['name'] == self.landscapeMemberCategory:
+                        x['subcategories'] = self.landscapeMembers
+            else:
+                for x in self.landscape['landscape']:
+                    if x['name'] == self.landscapeMemberCategory:
+                        self.landscapeMembers = x['subcategories']
 
     def writeMissing(self, name, logo, homepage_url, crunchbase):
         if self._missingcsvfilewriter is None:
