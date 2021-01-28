@@ -245,7 +245,7 @@ class SFDCMembers(Members):
     def loadData(self):
         print("--Loading SFDC Members data--")
         sf = Salesforce(username=self.sf_username,password=self.sf_password,security_token=self.sf_token)
-        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Project__c = '{project}'".format(project=self.project))
+        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Project__c = '{project}'".format(project=self.project))
 
         for record in result['records']:
             if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
@@ -275,6 +275,8 @@ class SFDCMembers(Members):
                     member.crunchbase = self.crunchbaseURL.format(uri=record['Account']['cbit__Clearbit__r']['cbit__CompanyCrunchbaseHandle__c'])
             except ValueError as e:
                 pass
+            if record['Account']['Twitter_Handle__c'] and record['Account']['Twitter_Handle__c'] != '':
+                member.twitter = "https://twitter.com/{handle}".format(handle=record['Account']['Twitter_Handle__c'])
             self.members.append(member)
 
     def find(self, org, website, membership):
