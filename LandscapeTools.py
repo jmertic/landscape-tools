@@ -46,16 +46,18 @@ class Config:
             except:
                 sys.exit(config_file+" config file is not defined")
 
-            if 'sf_username' in data_loaded:
-                self.sf_username = data_loaded['sf_username']
-            if 'sf_password' in data_loaded:
-                self.sf_password = data_loaded['sf_password']
-            if 'sf_token' in data_loaded:
-                self.sf_token = data_loaded['sf_token']
-            elif 'SFDC_TOKEN' in os.environ:
-                self.token = os.environ['SFDC_TOKEN']
+            if 'SF_USERNAME' in os.environ:
+                self.sf_username = os.environ['SF_USERNAME']
             else:
-                raise Exception('Salesforce security token is not defined. Set \'token\' in {config_file} or set SFDC_TOKEN environment variable to a valid Salesforce security token'.format(config_file=config_file))
+                raise Exception('Salesforce username is not defined. Set SF_USERNAME environment variable to a valid Salesforce username')
+            if 'SF_PASSWORD' in os.environ:
+                self.sf_password = os.environ['SF_PASSWORD']
+            else:
+                raise Exception('Salesforce password is not defined. Set SF_PASSWORD environment variable to a valid Salesforce password')
+            if 'SF_TOKEN' in os.environ:
+                self.sf_token = os.environ['SF_TOKEN']
+            else:
+                raise Exception('Salesforce token is not defined. Set SF_TOKEN environment variable to a valid Salesforce token')
             if 'project' in data_loaded:
                 self.project = data_loaded['project']
             if 'landscapeMemberCategory' in data_loaded:

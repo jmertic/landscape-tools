@@ -26,9 +26,6 @@ pip install -r requirements.txt
 All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables, or passing a `-c` option to the script with a path to the config file. Settings are below...
 
 ```yaml
-sf_username: # LF SFDC username
-sf_password: # LF SFDC password
-sf_token: # LF SFDC token ( instructions how to get one at https://help.salesforce.com/articleView?id=user_security_token.htm&type=5 )
 landscapeName: # short name of your landscape - matches entry at https://github.com/cncf/landscapeapp/blob/master/landscapes.yml
 landscapeMemberClasses: # classes of membership; name matches how it's listed in LF SFDC, and category how it will be listed in the landscape. Example below...
    - name: Associate Membership
@@ -45,7 +42,7 @@ landscapefile: # filename to use for the outputted landscape.yml file
 missingcsvfile: # filename to use for the list of entries with missing parts ( such as a logo, website, or crunchbase entry )
 ```
 
-In addition, this depends on `CRUNCHBASE_KEY` being set to a valid key.
+In addition, this depends on `CRUNCHBASE_KEY` being set to a valid key. In addition, `SF_USERNAME`, `SF_PASSWORD`, and `SF_TOKEN` must be set to match your Salesforce credentials ( instructions how to get one at https://help.salesforce.com/articleView?id=user_security_token.htm&type=5)
 
 ## Contributing
 
