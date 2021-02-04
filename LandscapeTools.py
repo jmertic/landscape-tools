@@ -234,10 +234,19 @@ class SFDCMembers(Members):
     sf_password = None
     sf_token = None
     project = 'a0941000002wBz9AAE' # The Linux Foundation
+    memberClasses = [
+        {"name": "Platinum Membership", "category": "Platinum"},
+        {"name": "Gold Membership", "category": "Gold"},
+        {"name": "Silver Membership", "category": "Silver"},
+        {"name": "Silver Membership - MPSF", "category": "Silver"},
+        {"name": "Associate Membership", "category": "Associate"}
+    ]
 
     crunchbaseURL = 'https://www.crunchbase.com/{uri}'
 
-    def __init__(self, sf_username = None, sf_password = None, sf_token = None, loadData = False):
+    def __init__(self, sf_username = None, sf_password = None, sf_token = None, loadData = False, memberClasses = []):
+        if memberClasses:
+            self.memberClasses = memberClasses
         if ( sf_username and sf_password and sf_token ):
             self.sf_username = sf_username
             self.sf_password = sf_password
@@ -246,8 +255,14 @@ class SFDCMembers(Members):
 
     def loadData(self):
         print("--Loading SFDC Members data--")
+
+        memberClasses = []
+        for memberClass in self.memberClasses:
+            memberClasses.append(memberClass['name'])
+        memberClassString = ','.join(map("'{0}'".format, memberClasses))
+        
         sf = Salesforce(username=self.sf_username,password=self.sf_password,security_token=self.sf_token)
-        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Asset.Projects__c = '{project}' order by Account.Name".format(project=self.project))
+        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Product2.Name in ({memberClassString}) and Asset.Projects__c = '{project}' order by Account.Name".format(project=self.project,memberClassString=memberClassString))
 
         for record in result['records']:
             if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
