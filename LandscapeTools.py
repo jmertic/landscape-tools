@@ -262,7 +262,7 @@ class SFDCMembers(Members):
         memberClassString = ','.join(map("'{0}'".format, memberClasses))
         
         sf = Salesforce(username=self.sf_username,password=self.sf_password,security_token=self.sf_token)
-        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Status in ('Active','Purchased') and Product2.Name in ({memberClassString}) and Asset.Projects__c = '{project}' order by Account.Name".format(project=self.project,memberClassString=memberClassString))
+        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Display_Logo_On_Website__c = false and Asset.Status in ('Active','Purchased') and Product2.Name in ({memberClassString}) and Asset.Projects__c = '{project}' order by Account.Name".format(project=self.project,memberClassString=memberClassString))
 
         for record in result['records']:
             if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
