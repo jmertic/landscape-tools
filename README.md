@@ -36,7 +36,7 @@ landscapeMemberClasses: # classes of membership; name matches how it's listed in
      category: Platinum
    - name: Silver Membership
      category: Silver
-project: # name of the project as listed in LF SFDC
+project: # SF ID record for the project as listed in LF SFDC
 landscapeMemberCategory: # category name of the members section in the landscape.yml file
 landscapefile: # filename to use for the outputted landscape.yml file
 missingcsvfile: # filename to use for the list of entries with missing parts ( such as a logo, website, or crunchbase entry )

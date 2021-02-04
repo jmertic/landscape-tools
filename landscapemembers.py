@@ -87,7 +87,7 @@ def main():
                     print("...Added to Landscape")
                     lflandscape.membersAdded += 1
                     # host the logo
-                    #member.logo = lflandscape.hostLogo(logo=member.logo,orgname=member.orgname)
+                    member.logo = lflandscape.hostLogo(logo=member.logo,orgname=member.orgname)
                     memberClass['items'].append(member.toLandscapeItemAttributes())
                 break
 
