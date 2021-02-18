@@ -1,6 +1,6 @@
 # How this all works?
 
-The main script [landscapemembers.py] is designed to pull a list of all current members of the given project from LF SFDC, using that as the primary source of data for the landscape. Data pulled includes...
+The main script [landscapemembers.py](landscapemembers.py) is designed to pull a list of all current members of the given project from LF SFDC, using that as the primary source of data for the landscape. Data pulled includes...
 
 - Member name
 - Website
@@ -12,9 +12,15 @@ The pull will look for active members based on the Purchase History, and respect
 
 With the data for things like logos and crunchbase entries, there is often more accurate data in other [landscapes](https://landscapes.dev). The script will attempt to look for this, and overlay data from other landscapes if the data in SFDC is empty. This also pulls in useful data such as `stock_ticker`, which often has to be set to `null` as the Crunchbase data is inaccurate.
 
+For the LF Landscape, this all runs nightly at 9:00pm-ish EST.  
+
 # Run a build with GitHub Actions
 
 Easiest option to do a build is leveraging GitHub Actions, which requires nothing for you to setup on your local machine.
+
+If it's all setup, goto the landscape repo under [Actions](actions). You should see a job called 'Update members' on the right side under 'Workflows'. Click that, then on the next screen click 'Run workflow'
+
+## How this is all setup
 
 There is some prerequiste setup in GitHub.
 
@@ -122,6 +128,8 @@ jobs:
           MERGE_RETRY_SLEEP: 300000
           MERGE_METHOD: "squash"
 ```
+
+
 
 # Running a full build locally
 
