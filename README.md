@@ -42,6 +42,8 @@ landscapefile: # filename to use for the outputted landscape.yml file
 missingcsvfile: # filename to use for the list of entries with missing parts ( such as a logo, website, or crunchbase entry )
 ```
 
+### Environment variables
+
 In addition, this depends on `CRUNCHBASE_KEY` being set to a valid key. In addition, `SF_USERNAME`, `SF_PASSWORD`, and `SF_TOKEN` must be set to match your Salesforce credentials ( instructions how to get one at https://help.salesforce.com/articleView?id=user_security_token.htm&type=5)
 
 ## Contributing
