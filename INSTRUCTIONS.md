@@ -12,15 +12,16 @@ The pull will look for active members based on the Purchase History, and respect
 
 With the data for things like logos and crunchbase entries, there is often more accurate data in other [landscapes](https://landscapes.dev). The script will attempt to look for this, and overlay data from other landscapes if the data in SFDC is empty. This also pulls in useful data such as `stock_ticker`, which often has to be set to `null` as the Crunchbase data is inaccurate.
 
-For the LF Landscape, this all runs nightly at 9:00pm-ish EST.  
+# How to use
 
-# Run a build with GitHub Actions
+You can use this script in a few different ways, but generally one of the below works best
 
-Easiest option to do a build is leveraging GitHub Actions, which requires nothing for you to setup on your local machine.
+## Recommended - Automatic build with GitHub Actions
+
+Easiest option to do a build is leveraging GitHub Actions, which requires nothing for you to setup on your local machine. You can have it run on demand, or 
+set the `cron` option in the `update_members.yml` action to have it run on a schedule ( this is how it's done for the LF Landscape, which runs nightly at 9:00pm-ish EST ).
 
 If it's all setup, goto the landscape repo under [Actions](actions). You should see a job called 'Update members' on the right side under 'Workflows'. Click that, then on the next screen click 'Run workflow'
-
-## How this is all setup
 
 There is some prerequiste setup in GitHub.
 
@@ -131,7 +132,7 @@ jobs:
 
 
 
-# Running a full build locally
+## Optional - Running a full build locally
 
 To run things locally, you'll want to have both this repo and the given landscape repo checked out. The following steps should do that...
 
