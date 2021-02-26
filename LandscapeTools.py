@@ -313,7 +313,7 @@ class LandscapeMembers(Members):
     landscapeSettingsYAML = 'https://raw.githubusercontent.com/{repo}/master/settings.yml'
     landscapeLandscapeYAML = 'https://raw.githubusercontent.com/{repo}/master/landscape.yml'
     landscapeLogo = 'https://raw.githubusercontent.com/{repo}/master/hosted_logos/{logo}'
-    skipLandscapes = []
+    skipLandscapes = ['openjsf']
 
     def __init__(self, landscapeListYAML = None, loadData = False):
         if landscapeListYAML:
@@ -327,7 +327,7 @@ class LandscapeMembers(Members):
         landscapeList = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
 
         for landscape in landscapeList['landscapes']:
-            if landscape in self.skipLandscapes:
+            if landscape['name'] in self.skipLandscapes:
                 continue
 
             print("Loading "+landscape['name']+"...")
