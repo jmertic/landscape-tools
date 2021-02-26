@@ -85,7 +85,7 @@ jobs:
           commit-message: Update members
 ```
 
-Next is `marksuccessfulbuild.yml`, which looks for when the Netlify preview build is done and labels the pull request to be merged.
+Next is `marksuccessfulbuild.yml`, which looks for when the Netlify preview build is done and labels the pull request to be merged. Change the string `omp-landscape` for the name of your landscape in Netlify
 
 ```yaml
 name: "Set Issue Label on successful build"
@@ -129,8 +129,6 @@ jobs:
           MERGE_RETRY_SLEEP: 300000
           MERGE_METHOD: "squash"
 ```
-
-
 
 ## Optional - Running a full build locally
 
