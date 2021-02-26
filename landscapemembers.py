@@ -30,7 +30,6 @@ def main():
     sfdcmembers.loadData()
     cbmembers = CrunchbaseMembers(loadData = False)
     lsmembers = LandscapeMembers(loadData = False)
-    lsmembers.skipLandscapes.append(config.landscapeName)
     lsmembers.loadData()
 
     lflandscape = LandscapeOutput()
