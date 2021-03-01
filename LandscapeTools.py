@@ -37,6 +37,8 @@ class Config:
     sf_password = None
     sf_token = None
     project = 'a0941000002wBz9AAE' # The Linux Foundation
+    landscapefile = 'landscape.yml'
+    missingcsvfile = 'missing.csv'
 
     def __init__(self, config_file):
         if config_file != '' and os.path.isfile(config_file):
