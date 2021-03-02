@@ -148,7 +148,7 @@ class Member:
     def toLandscapeItemAttributes(self):
         dict = {}
         dict['item'] = None
-        attributes = [a for a in dir(self) if not a.startswith('_') and not callable(getattr(self, a))]
+        attributes = sorted([a for a in dir(self) if not a.startswith('_') and not callable(getattr(self, a))])
         for i in attributes:
             if i == 'orgname':
                 dict['name'] = getattr(self,i)
