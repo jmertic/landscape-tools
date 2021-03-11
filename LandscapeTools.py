@@ -146,21 +146,25 @@ class Member:
         self.__logo = logo
 
     def toLandscapeItemAttributes(self):
-        dict = {}
-        dict['item'] = None
+        entrydict = {}
         attributes = sorted([a for a in dir(self) if not a.startswith('_') and not callable(getattr(self, a))])
         for i in attributes:
             if i == 'orgname':
-                dict['name'] = getattr(self,i)
+                entrydict['name'] = getattr(self,i)
             elif i == 'website':
-                dict['homepage_url'] = getattr(self,i)
+                entrydict['homepage_url'] = getattr(self,i)
             elif i == 'membership':
                 continue
             else:
-                dict[i] = getattr(self,i)
+                entrydict[i] = getattr(self,i)
+        
+        returnentry = {}
+        returnentry['item'] = None
+        for key in sorted(entrydict.keys()):
+            returnentry[key] = entrydict[key]
 
-        return dict
-
+        return returnentry
+        
     def isValidLandscapeItem(self):
         return self._validWebsite and self._validLogo and self._validCrunchbase and self.orgname != ''
 
