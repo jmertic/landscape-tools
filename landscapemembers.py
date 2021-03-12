@@ -51,17 +51,8 @@ def main():
                 # lookup in other landscapes
                 lookupmember = lsmembers.find(member.orgname, member.website)
                 if lookupmember:
-                    for key, value in lookupmember.toLandscapeItemAttributes().items():
-                        if key in ['item','name']:
-                            continue
-                        try:
-                            if (not hasattr(member,key) or not getattr(member,key)) or (key == 'crunchbase' and value != getattr(member,key)):
-                                print("...Data from other landscape - "+key)
-                                print(".....Old Value - '{}'".format(getattr(member,key) if hasattr(member,key) else'empty'))
-                                print(".....New Value - '{}'".format(value if value else 'empty'))
-                                setattr(member, key, value)
-                        except ValueError as e:
-                            print(e)
+                    print("...Overlay other landscape data")
+                    lookupmember.overlay(member)
                 
                 # overlay crunchbase data
                 cbmember = cbmembers.find(member.orgname,member.website)

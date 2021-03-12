@@ -168,6 +168,32 @@ class Member:
     def isValidLandscapeItem(self):
         return self._validWebsite and self._validLogo and self._validCrunchbase and self.orgname != ''
 
+    #
+    # Overlay this Member data on another Member
+    #
+    def overlay(self, membertooverlay, onlykeys = []):
+
+        memberitems = self.toLandscapeItemAttributes().items()
+
+        for key, value in memberitems:
+            if key in ['item','name']:
+                continue
+            if onlykeys and key not in onlykeys:
+                continue
+            # translate website and name to the Member object attribute name
+            if key == "homepage_url":
+                key = "website"
+            if key == "name":
+                key = "orgname"
+            try:
+                if (not hasattr(membertooverlay,key) or not getattr(membertooverlay,key)) or (key == 'crunchbase' and value != getattr(membertooverlay,key)):
+                    print("...Overlay "+key)
+                    print(".....Old Value - '{}'".format(getattr(membertooverlay,key) if hasattr(membertooverlay,key) else'empty'))
+                    print(".....New Value - '{}'".format(value if value else 'empty'))
+                    setattr(membertooverlay, key, value)
+            except ValueError as e:
+                print(e)
+    
 
 #
 # Abstract Members class to normalize the methods used for the other ways of getting a member's info

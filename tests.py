@@ -147,6 +147,34 @@ class TestMember(unittest.TestCase):
 
         self.assertFalse(member.isValidLandscapeItem())
 
+    def testOverlay(self):
+        membertooverlay = Member()
+        membertooverlay.orgname = 'test2'
+        membertooverlay.website = 'https://foo.com'
+        membertooverlay.logo = 'gold.svg'
+        membertooverlay.membership = 'Gold'
+        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.org'
+        member.membership = 'Silver'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        member.twitter = 'https://twitter.com/mytwitter'
+        member.stock_ticker = None
+
+        membertooverlay.overlay(member)
+
+        self.assertEqual(member.orgname,'test')
+        self.assertEqual(member.website,'https://foo.org/')
+        self.assertEqual(member.logo,'gold.svg')
+        self.assertEqual(member.membership,'Silver')
+        self.assertEqual(member.crunchbase, 'https://www.crunchbase.com/organization/visual-effects-society')
+        self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
+        self.assertEqual(member.stock_ticker,None)
+        
+
+
 class TestMembers(unittest.TestCase):
 
     @patch("LandscapeTools.Members.__abstractmethods__", set())
