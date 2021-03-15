@@ -12,6 +12,7 @@ import re
 import os
 import os.path
 import json
+import unicodedata
 from os.path import normpath, basename
 from datetime import datetime
 from pathlib import Path
@@ -146,22 +147,38 @@ class Member:
         self.__logo = logo
 
     def toLandscapeItemAttributes(self):
-        entrydict = {}
-        attributes = sorted([a for a in dir(self) if not a.startswith('_') and not callable(getattr(self, a))])
-        for i in attributes:
-            if i == 'orgname':
-                entrydict['name'] = getattr(self,i)
-            elif i == 'website':
-                entrydict['homepage_url'] = getattr(self,i)
-            elif i == 'membership':
-                continue
-            else:
-                entrydict[i] = getattr(self,i)
         
-        returnentry = {}
-        returnentry['item'] = None
-        for key in sorted(entrydict.keys()):
-            returnentry[key] = entrydict[key]
+        allowedKeys = [
+            'name',
+            'homepage_url',
+            'logo',
+            'twitter',
+            'repo_url',
+            'crunchbase',
+            'project_org',
+            'additional_repos',
+            'stock_ticker',
+            'description',
+            'branch',
+            'project',
+            'url_for_bestpractices',
+            'enduser',
+            'open_source',
+            'allow_duplicate_repo',
+            'unnamed_organization',
+            'organization',
+            'joined',
+            'other_repo_url'
+        ]
+        returnentry = {'item': None}
+
+        for i in allowedKeys:
+            if i == 'name':
+                returnentry['name'] = self.orgname
+            elif i == 'homepage_url':
+                returnentry['homepage_url'] = self.website
+            elif hasattr(self,i):
+                returnentry[i] = getattr(self,i)
 
         return returnentry
         
@@ -574,18 +591,16 @@ class LandscapeOutput:
         filename = filename.replace(',', '')
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         filename = filename.lower()
+        filename = unicodedata.normalize('NFKD',filename)
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename+".svg") 
 
-#        i = 1
-#        while os.path.isfile(filenamepath):
-#            filename = filename+"_"+str(i)
-#            filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename+".svg") 
-#            i = i + 1
-        
         r = requests.get(logo, allow_redirects=True)
         open(filenamepath, 'wb').write(r.content)
 
         return filename+".svg"
+
+    def _removeNulls(self,yamlout):
+        return re.sub('/(- \w+:) null/g', '$1', yamlout)
 
     def updateLandscape(self):
         # now write it back
@@ -598,7 +613,8 @@ class LandscapeOutput:
         ryaml.indent(mapping=2, sequence=4, offset=2)
         ryaml.default_flow_style = False
         ryaml.allow_unicode = True
+        ryaml.width = 160
         ryaml.Dumper = ruamel.yaml.RoundTripDumper
-        ryaml.dump(self.landscape,landscapefileoutput)
+        ryaml.dump(self.landscape,landscapefileoutput, transform=self._removeNulls)
 
         print("Successfully added "+str(self.membersAdded)+" members and skipped "+str(self.membersErrors)+" members")

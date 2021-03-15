@@ -127,7 +127,11 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict['homepage_url'],member.website)
         self.assertEqual(dict['crunchbase'],member.crunchbase)
         self.assertNotIn('membership',dict)
-        self.assertEqual({'item':None,'crunchbase': member.crunchbase, 'homepage_url':member.website,'logo':None,'name': member.orgname},dict)
+        self.assertEqual(dict.popitem(),('crunchbase', member.crunchbase))
+        self.assertEqual(dict.popitem(),('logo', None))
+        self.assertEqual(dict.popitem(),('homepage_url', member.website))
+        self.assertEqual(dict.popitem(),('name', member.orgname))
+        self.assertEqual(dict.popitem(),('item', None))
 
     def testIsValidLandscapeItem(self):
         member = Member()
