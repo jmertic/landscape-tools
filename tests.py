@@ -8,11 +8,22 @@
 import unittest
 import unittest.mock
 from unittest.mock import Mock
+from unittest import mock
 import tempfile
 import os
 from unittest.mock import patch
 
 from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
+
+# This method will be used by the mock to replace requests.get
+def mocked_requests_get(*args, **kwargs):
+    class MockResponse:
+        def __init__(self):
+            self.content = b'this is image data'
+            self.status_code = 200
+
+    return MockResponse()
+
 
 class TestMember(unittest.TestCase):
 
@@ -392,6 +403,21 @@ landscape:
             self.assertEqual(len(landscape.landscape['landscape'][0]['subcategories'][0]['items']),0)
             self.assertEqual(landscape.landscapeMembers[0]['name'],"Good")
 
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def testHostLogo(self,mock_get):
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','dog'),'dog.svg')
+
+    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    def testHostLogoUnicode(self,mock_get):
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'privee.svg')
+    
     def testHostLogoNotURL(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')

@@ -591,13 +591,13 @@ class LandscapeOutput:
         filename = filename.replace(',', '')
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         filename = filename.lower()
-        filename = unicodedata.normalize('NFKD',filename)
-        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename+".svg") 
+        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg") 
 
         r = requests.get(logo, allow_redirects=True)
-        open(filenamepath, 'wb').write(r.content)
+        with open(filenamepath, 'wb') as fp:
+            fp.write(r.content)
 
-        return filename+".svg"
+        return unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg"
 
     def _removeNulls(self,yamlout):
         return re.sub('/(- \w+:) null/g', '$1', yamlout)
