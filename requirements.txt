@@ -5,5 +5,4 @@ validators>=0.15.0
 beautifulsoup4>=4.8.0
 url-normalize>=1.4.2
 tld>=0.12.2
-simple-salesforce>=1.1.0
 pycrunchbase>=0.3.8

@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from abc import ABC, abstractmethod
 from urllib.parse import urlparse
+import urllib.request
 
 # third party modules
 from yaml.representer import SafeRepresenter
@@ -29,15 +30,11 @@ from bs4 import BeautifulSoup
 from url_normalize import url_normalize
 from tld import get_fld
 from tld.utils import update_tld_names
-from simple_salesforce import Salesforce
 from pycrunchbase import CrunchBase
 
 class Config:
 
-    sf_username = None
-    sf_password = None
-    sf_token = None
-    project = 'a0941000002wBz9AAE' # The Linux Foundation
+    project = 'tlf' # The Linux Foundation
     landscapefile = 'landscape.yml'
     missingcsvfile = 'missing.csv'
 
@@ -49,18 +46,6 @@ class Config:
             except:
                 sys.exit(config_file+" config file is not defined")
 
-            if 'SF_USERNAME' in os.environ:
-                self.sf_username = os.environ['SF_USERNAME']
-            else:
-                raise Exception('Salesforce username is not defined. Set SF_USERNAME environment variable to a valid Salesforce username')
-            if 'SF_PASSWORD' in os.environ:
-                self.sf_password = os.environ['SF_PASSWORD']
-            else:
-                raise Exception('Salesforce password is not defined. Set SF_PASSWORD environment variable to a valid Salesforce password')
-            if 'SF_TOKEN' in os.environ:
-                self.sf_token = os.environ['SF_TOKEN']
-            else:
-                raise Exception('Salesforce token is not defined. Set SF_TOKEN environment variable to a valid Salesforce token')
             if 'project' in data_loaded:
                 self.project = data_loaded['project']
             if 'landscapeMemberCategory' in data_loaded:
@@ -84,12 +69,14 @@ class Member:
     __website = None
     __logo = None
     __crunchbase = None
+    __twitter = None
 
     # we'll use these to keep track of whether the member has valid fields
     _validWebsite = False
     _validLogo = False
     _validCrunchbase = False
-
+    _validTwitter = False
+    
     @property
     def crunchbase(self):
         return self.__crunchbase
@@ -146,6 +133,27 @@ class Member:
         self._validLogo = True
         self.__logo = logo
 
+    @property
+    def twitter(self):
+        return self.__twitter
+
+    @twitter.setter
+    def twitter(self, twitter):
+        if not twitter.startswith('https://twitter.com/'):
+            # fix the URL if it's not formatted right
+            o = urlparse(twitter)
+            if o.netloc == '':
+                twitter = "https://twitter.com/{}".format(twitter)
+            if (o.netloc == "twitter.com" or o.netloc == "www.twitter.com"):
+                twitter = "https://twitter.com{path}".format(path=o.path)
+            else:
+                self._validTwitter = False
+                raise ValueError("Member.twitter for {orgname} must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=twitter,orgname=self.orgname))
+
+        self._validTwitter = True
+        self.__twitter = twitter
+
+
     def toLandscapeItemAttributes(self):
         
         allowedKeys = [
@@ -177,6 +185,8 @@ class Member:
                 returnentry['name'] = self.orgname
             elif i == 'homepage_url':
                 returnentry['homepage_url'] = self.website
+            elif i == 'twitter' and ( not self.twitter or self.twitter == ''):
+                continue
             elif hasattr(self,i):
                 returnentry[i] = getattr(self,i)
 
@@ -279,71 +289,52 @@ class Members(ABC):
 class SFDCMembers(Members):
 
     members = []
-    sf_username = None
-    sf_password = None
-    sf_token = None
-    project = 'a0941000002wBz9AAE' # The Linux Foundation
-    memberClasses = [
-        {"name": "Platinum Membership", "category": "Platinum"},
-        {"name": "Gold Membership", "category": "Gold"},
-        {"name": "Silver Membership", "category": "Silver"},
-        {"name": "Silver Membership - MPSF", "category": "Silver"},
-        {"name": "Associate Membership", "category": "Associate"}
-    ]
+    project = 'tlf' # The Linux Foundation
 
-    crunchbaseURL = 'https://www.crunchbase.com/{uri}'
+    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members' 
 
-    def __init__(self, sf_username = None, sf_password = None, sf_token = None, loadData = False, memberClasses = []):
-        if memberClasses:
-            self.memberClasses = memberClasses
-        if ( sf_username and sf_password and sf_token ):
-            self.sf_username = sf_username
-            self.sf_password = sf_password
-            self.sf_token = sf_token
-            super().__init__(loadData)
+    def __init__(self, project = None, loadData = True):
+        if project:
+            self.project = project
+        super().__init__(loadData)
 
     def loadData(self):
         print("--Loading SFDC Members data--")
 
-        memberClasses = []
-        for memberClass in self.memberClasses:
-            memberClasses.append(memberClass['name'])
-        memberClassString = ','.join(map("'{0}'".format, memberClasses))
-        
-        sf = Salesforce(username=self.sf_username,password=self.sf_password,security_token=self.sf_token)
-        result = sf.query("select Account.Name, Account.Website, Account.Logo_URL__c, Account.CrunchBase_URL__c, Account.Twitter_Handle__c, Account.cbit__Clearbit__r.cbit__CompanyCrunchbaseHandle__c, Account.cbit__Clearbit__r.cbit__CompanyTicker__c, Product2.Name from Asset where Asset.Display_Logo_On_Website__c = false and Asset.Status in ('Active','Purchased') and Product2.Name in ({memberClassString}) and Asset.Projects__c = '{project}' order by Account.Name".format(project=self.project,memberClassString=memberClassString))
+        with urllib.request.urlopen(self.endpointURL.format(self.project)) as projectEndpointUrl:
+            memberList = json.loads(projectEndpointUrl.read().decode())
+            for record in memberList:
+                if self.find(record['Name'],record['Website'],record['Membership']['Name']):
+                    continue
 
-        for record in result['records']:
-            if self.find(record['Account']['Name'],record['Account']['Website'],record['Product2']['Name']):
-                continue
-
-            member = Member()
-            try:
-                member.orgname = record['Account']['Name']
-            except ValueError as e:
-                pass
-            try:
-                member.website = record['Account']['Website']
-            except ValueError as e:
-                pass
-            try:
-                member.membership = record['Product2']['Name']
-            except ValueError as e:
-                pass
-            try:
-                member.logo = record['Account']['Logo_URL__c']
-            except ValueError as e:
-                pass
-            try:
-                if record['Account']['CrunchBase_URL__c'] and record['Account']['CrunchBase_URL__c'] != '':
-                    member.crunchbase = record['Account']['CrunchBase_URL__c']
-                elif record['Account']['cbit__Clearbit__r'] and record['Account']['cbit__Clearbit__r']['cbit__CompanyCrunchbaseHandle__c']:
-                    member.crunchbase = self.crunchbaseURL.format(uri=record['Account']['cbit__Clearbit__r']['cbit__CompanyCrunchbaseHandle__c'])
-            except ValueError as e:
-                pass
-            if record['Account']['Twitter_Handle__c'] and record['Account']['Twitter_Handle__c'] != '':
-                member.twitter = "https://twitter.com/{handle}".format(handle=record['Account']['Twitter_Handle__c'])
-            self.members.append(member)
+                member = Member()
+                try:
+                    member.orgname = record['Name']
+                except ValueError as e:
+                    pass
+                try:
+                    member.website = record['Website']
+                except ValueError as e:
+                    pass
+                try:
+                    member.membership = record['Membership']['Name']
+                except ValueError as e:
+                    pass
+                try:
+                    member.logo = record['Logo']
+                except ValueError as e:
+                    pass
+                if record['CrunchBaseURL'] and record['CrunchBaseURL'] != '':
+                    try:
+                        member.crunchbase = record['CrunchBaseURL']
+                    except ValueError as e:
+                        pass
+                if record['Twitter'] and record['Twitter'] != '':
+                    try:
+                        member.twitter = record['Twitter']
+                    except ValueError as e:
+                        pass
+                self.members.append(member)
 
     def find(self, org, website, membership):
         normalizedorg = self.normalizeCompany(org)
@@ -398,7 +389,8 @@ class LandscapeMembers(Members):
                             member = Member()
                             for key, value in item.items():
                                 try:
-                                    setattr(member, key, value)
+                                    if key != 'enduser':
+                                        setattr(member, key, value)
                                 except ValueError as e:
                                     pass
                             try:
@@ -481,30 +473,31 @@ class CrunchbaseMembers(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading Crunchbase bulk export data--")
-        with open(self.bulkdatafile, newline='') as csvfile:
-            memberreader = csv.reader(csvfile, delimiter=',', quotechar='"')
-            fields = next(memberreader)
-            for row in memberreader:
-                member = Member()
-                try:
-                    member.membership = ''
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.orgname = row[1]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.website = row[11]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
-                try:
-                    member.crunchbase = row[4]
-                except ValueError as e:
-                    pass # avoids all the Exceptions for logo
+        if os.path.isfile(self.bulkdatafile):
+            print("--Loading Crunchbase bulk export data--")
+            with open(self.bulkdatafile, newline='') as csvfile:
+                memberreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+                fields = next(memberreader)
+                for row in memberreader:
+                    member = Member()
+                    try:
+                        member.membership = ''
+                    except ValueError as e:
+                        pass # avoids all the Exceptions for logo
+                    try:
+                        member.orgname = row[1]
+                    except ValueError as e:
+                        pass # avoids all the Exceptions for logo
+                    try:
+                        member.website = row[11]
+                    except ValueError as e:
+                        pass # avoids all the Exceptions for logo
+                    try:
+                        member.crunchbase = row[4]
+                    except ValueError as e:
+                        pass # avoids all the Exceptions for logo
 
-                self.members.append(member)
+                    self.members.append(member)
 
 class LandscapeOutput:
 

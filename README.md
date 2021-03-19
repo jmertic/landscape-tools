@@ -13,12 +13,17 @@ Current tools are:
 
 ## Installation
 
-```
+```bash
 git clone https://github.com/jmertic/landscape-tools
 cd landscape-tools
 chmod +x *.py
 pip install -r requirements.txt
-./downloadcrunchbasedata.sh
+```
+
+If you wish to use crunchbase as a data source, add this command.
+
+```bash
+./downloadcrunchbasedata.sh 
 ```
 
 ## Configuration
@@ -36,7 +41,7 @@ landscapeMemberClasses: # classes of membership; name matches how it's listed in
      category: Platinum
    - name: Silver Membership
      category: Silver
-project: # SF ID record for the project as listed in LF SFDC
+project: # project slug
 landscapeMemberCategory: # category name of the members section in the landscape.yml file
 landscapefile: # filename to use for the outputted landscape.yml file
 missingcsvfile: # filename to use for the list of entries with missing parts ( such as a logo, website, or crunchbase entry )
@@ -44,7 +49,7 @@ missingcsvfile: # filename to use for the list of entries with missing parts ( s
 
 ### Environment variables
 
-In addition, this depends on `CRUNCHBASE_KEY` being set to a valid key. In addition, `SF_USERNAME`, `SF_PASSWORD`, and `SF_TOKEN` must be set to match your Salesforce credentials ( instructions how to get one at https://help.salesforce.com/articleView?id=user_security_token.htm&type=5)
+This depends on `CRUNCHBASE_KEY` being set to a valid key if you wish to use that as a data source ( required by [downloadcrunchbasedata.sh](downloadcrunchbasedata.sh) ).
 
 ## Contributing
 

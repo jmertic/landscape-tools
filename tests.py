@@ -246,7 +246,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers()
+        members = SFDCMembers(loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website,member.membership))
@@ -261,7 +261,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers()
+        members = SFDCMembers(loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))

@@ -25,12 +25,9 @@ def main():
         config = Config("config.yaml")
 
     # load member data sources
-    sfdcmembers = SFDCMembers(loadData = False, memberClasses = config.landscapeMemberClasses, sf_username = config.sf_username, sf_password = config.sf_password, sf_token = config.sf_token)
-    sfdcmembers.project = config.project
-    sfdcmembers.loadData()
-    cbmembers = CrunchbaseMembers(loadData = False)
-    lsmembers = LandscapeMembers(loadData = False)
-    lsmembers.loadData()
+    sfdcmembers = SFDCMembers(project = config.project)
+    cbmembers = CrunchbaseMembers()
+    lsmembers = LandscapeMembers()
 
     lflandscape = LandscapeOutput()
     lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
