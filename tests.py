@@ -7,11 +7,10 @@
 
 import unittest
 import unittest.mock
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, patch
 from unittest import mock
 import tempfile
 import os
-from unittest.mock import patch
 
 from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
 
@@ -267,6 +266,30 @@ class TestSFDCMembers(unittest.TestCase):
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
         self.assertFalse(members.find(member.orgname,member.website,'Silver'))
 
+    @patch('urllib.request.urlopen')
+    def testLoadData(self,mock_urlopen):
+        mock = MagicMock()
+        mock.getcode.return_value = 200
+        mock.read.return_value = '[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]'.encode()
+        mock.__enter__.return_value = mock
+        mock_urlopen.return_value = mock
+
+        members = SFDCMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertEqual(members.members[0].website,"https://consensys.net/")
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
+
+
 class TestLandscapeMembers(unittest.TestCase):
 
     def testNormalizeLogo(self):
@@ -312,8 +335,7 @@ e1393508-30ea-8a36-3f96dd3226033abd,Wetpaint,organization,wetpaint,https://www.c
 
         members = CrunchbaseMembers()
         members.bulkdatafile = tmpfilename.name
-        members.bulkdata = True
-        members.loadData = True
+        members.loadData()
         self.assertTrue(members.find('Wetpaint','http://www.wetpaint.com/'))
         self.assertTrue(members.find('Wetpaint','http://www.foo.com/'))
         self.assertFalse(members.find('Wetpainter','http://www.foo.com/'))

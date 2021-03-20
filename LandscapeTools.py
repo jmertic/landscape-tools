@@ -155,7 +155,6 @@ class Member:
 
 
     def toLandscapeItemAttributes(self):
-        
         allowedKeys = [
             'name',
             'homepage_url',
@@ -227,9 +226,8 @@ class Member:
 #
 class Members(ABC):
 
-    members = []
-
     def __init__(self, loadData = False):
+        self.members = []
         if loadData:
             self.loadData()
 
@@ -288,12 +286,12 @@ class Members(ABC):
 
 class SFDCMembers(Members):
 
-    members = []
     project = 'tlf' # The Linux Foundation
 
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members' 
 
     def __init__(self, project = None, loadData = True):
+
         if project:
             self.project = project
         super().__init__(loadData)
@@ -320,16 +318,17 @@ class SFDCMembers(Members):
                     member.membership = record['Membership']['Name']
                 except ValueError as e:
                     pass
-                try:
-                    member.logo = record['Logo']
-                except ValueError as e:
-                    pass
-                if record['CrunchBaseURL'] and record['CrunchBaseURL'] != '':
+                if 'Logo' in record:
+                    try:
+                        member.logo = record['Logo']
+                    except ValueError as e:
+                        pass
+                if 'CrunchBaseURL' in record and record['CrunchBaseURL'] != '':
                     try:
                         member.crunchbase = record['CrunchBaseURL']
                     except ValueError as e:
                         pass
-                if record['Twitter'] and record['Twitter'] != '':
+                if 'Twitter' in record and record['Twitter'] != '':
                     try:
                         member.twitter = record['Twitter']
                     except ValueError as e:
@@ -348,7 +347,6 @@ class SFDCMembers(Members):
 
 class LandscapeMembers(Members):
 
-    members = []
     landscapeListYAML = 'https://raw.githubusercontent.com/cncf/landscapeapp/master/landscapes.yml'
     landscapeSettingsYAML = 'https://raw.githubusercontent.com/{repo}/master/settings.yml'
     landscapeLandscapeYAML = 'https://raw.githubusercontent.com/{repo}/master/landscape.yml'
@@ -427,7 +425,6 @@ class LandscapeMembers(Members):
 
 class CrunchbaseAPIMembers(Members):
 
-    members = []
     crunchbaseKey = ''
 
     def loadData(self):
@@ -464,7 +461,6 @@ class CrunchbaseAPIMembers(Members):
 
 class CrunchbaseMembers(Members):
 
-    members = []
     bulkdatafile = 'organizations.csv'
 
     def __init__(self, bulkdatafile = None, loadData = False):
