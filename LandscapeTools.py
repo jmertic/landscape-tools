@@ -139,6 +139,8 @@ class Member:
 
     @twitter.setter
     def twitter(self, twitter):
+        if not twitter:
+            return
         if not twitter.startswith('https://twitter.com/'):
             # fix the URL if it's not formatted right
             o = urlparse(twitter)
@@ -238,12 +240,13 @@ class Members(ABC):
     def find(self, org, website):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
+        found = []
 
         for member in self.members:
             if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website):
-                return member
+                found.append(member)
 
-        return False
+        return found
 
     def normalizeCompany(self, company):
 
@@ -339,11 +342,12 @@ class SFDCMembers(Members):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
+        members = []
         for member in self.members:
             if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
-                return member
+                members.append(member)
 
-        return False
+        return members
 
 class LandscapeMembers(Members):
 
@@ -353,7 +357,7 @@ class LandscapeMembers(Members):
     landscapeLogo = 'https://raw.githubusercontent.com/{repo}/master/hosted_logos/{logo}'
     skipLandscapes = ['openjsf']
 
-    def __init__(self, landscapeListYAML = None, loadData = False):
+    def __init__(self, landscapeListYAML = None, loadData = True):
         if landscapeListYAML:
             self.landscapeListYAML = landscapeListYAML
         super().__init__(loadData)
@@ -411,7 +415,6 @@ class LandscapeMembers(Members):
                                 member.crunchbase = item['crunchbase']
                             except ValueError as e:
                                 pass
-                            
                             self.members.append(member)
 
     def normalizeLogo(self, logo, landscapeRepo):
@@ -438,6 +441,7 @@ class CrunchbaseAPIMembers(Members):
             self.crunchbaseKey = os.getenv('CRUNCHBASE_KEY')
         cb = CrunchBase(self.crunchbaseKey)
 
+        members = []
         for result in cb.organizations(org):
             company = cb.organization(result.permalink)
             if self.normalizeCompany(company.name) == normalizedorg:
@@ -455,9 +459,9 @@ class CrunchbaseAPIMembers(Members):
                 except ValueError as e:
                     pass
 
-                return member
+                members.append(member)
 
-        return False
+        return members
 
 class CrunchbaseMembers(Members):
 

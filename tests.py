@@ -220,6 +220,26 @@ class TestMembers(unittest.TestCase):
         self.assertFalse(members.find('dog','https://bar.com'))
 
     @patch("LandscapeTools.Members.__abstractmethods__", set())
+    def testFindMultiple(self):
+        members = Members()
+        
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        members.members.append(member)
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        members.members.append(member)
+        
+        self.assertEquals(len(members.find(member.orgname,member.website)),2)
+    
+    @patch("LandscapeTools.Members.__abstractmethods__", set())
     def testNormalizeCompanyEmptyOrg(self):
         members = Members(loadData=False)
         self.assertEqual(members.normalizeCompany(None),'')
@@ -303,14 +323,14 @@ class TestSFDCMembers(unittest.TestCase):
 class TestLandscapeMembers(unittest.TestCase):
 
     def testNormalizeLogo(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             'https://raw.githubusercontent.com/dog/cat/master/hosted_logos/mouse.svg',
             members.normalizeLogo('mouse.svg','dog/cat')
         )
 
     def testNormalizeLogoIsEmpty(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             '',
             members.normalizeLogo('','dog/cat')
@@ -321,7 +341,7 @@ class TestLandscapeMembers(unittest.TestCase):
         )
 
     def testNormalizeLogoIsURL(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             'https://foo.com/mouse.svg',
             members.normalizeLogo('https://foo.com/mouse.svg','dog/cat')

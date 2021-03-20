@@ -46,16 +46,15 @@ def main():
             landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
             if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ) and ( memberClass['name'] == landscapeMemberClass['category'] ) :
                 # lookup in other landscapes
-                lookupmember = lsmembers.find(member.orgname, member.website)
-                if lookupmember:
+                for lookupmember in lsmembers.find(member.orgname, member.website):
                     print("...Overlay other landscape data")
                     lookupmember.overlay(member)
                 
                 # overlay crunchbase data
-                cbmember = cbmembers.find(member.orgname,member.website)
-                if (not member.crunchbase and cbmember) or (cbmember and member.crunchbase != cbmember.crunchbase):
-                    print("...Updating crunchbase from Crunchbase")
-                    member.crunchbase = cbmember.crunchbase
+                for cbmember in cbmembers.find(member.orgname,member.website):
+                    if (not member.crunchbase and cbmember) or (cbmember and member.crunchbase != cbmember.crunchbase):
+                        print("...Updating crunchbase from Crunchbase")
+                        member.crunchbase = cbmember.crunchbase
                         
                 # Write out to missing.csv if it's missing key parameters
                 if not member.isValidLandscapeItem():
