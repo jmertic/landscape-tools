@@ -288,6 +288,16 @@ class TestSFDCMembers(unittest.TestCase):
         self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
         self.assertIsNone(members.members[1].twitter)
 
+    @patch('urllib.request.urlopen')
+    def testLoadDataDuplicates(self,mock_urlopen):
+        mock = MagicMock()
+        mock.getcode.return_value = 200
+        mock.read.return_value = '[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]'.encode()
+        mock.__enter__.return_value = mock
+        mock_urlopen.return_value = mock
+
+        members = SFDCMembers()
+        self.assertEqual(len(members.members),2)
 
 
 class TestLandscapeMembers(unittest.TestCase):
