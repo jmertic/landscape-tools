@@ -176,5 +176,5 @@ git push
 
 There are a few common issues that pop up that require intervention.
 
-- Bad logo, either the 'SVG embeds a PNG' error or 'Convert text to glyph'. Tips on how to resolve these errors and get a proper logo are at https://github.com/cncf/landscapeapp#images, and then refer to the internal instructions for updating logos.
+- Bad logo, either the 'SVG embeds a PNG' error or 'Convert text to glyph'. Tips on how to resolve these errors and get a proper logo are at https://github.com/cncf/landscapeapp#logos, and then refer to the internal instructions for updating logos.
 - Bad crunchbase entry, for this just add the right one in SF for the member under 'Crunchbase URL'
