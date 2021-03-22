@@ -23,6 +23,35 @@ def mocked_requests_get(*args, **kwargs):
 
     return MockResponse()
 
+class TestConfig(unittest.TestCase):
+
+    def testLoadConfig(self):
+        testconfigfilecontents = """
+landscapeName: aswf
+landscapeMemberClasses:
+   - name: Premier Membership
+     category: Premier
+   - name: General Membership
+     category: General
+   - name: Associate Membership
+     category: Associate
+project: a09410000182dD2AAI # Academy Software Foundation
+landscapeMemberCategory: ASWF Member Company
+        """
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+        self.assertEqual(config.landscapeMemberCategory,"ASWF Member Company")
+        self.assertEqual(config.landscapefile,"landscape.yml")
+        self.assertEqual(config.missingcsvfile,"missing.csv")
+        self.assertEqual(config.landscapeName,"aswf")
+        self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
+
+        os.unlink(tmpfilename.name)
 
 class TestMember(unittest.TestCase):
 
@@ -124,6 +153,42 @@ class TestMember(unittest.TestCase):
                 member.logo = invalidLogo
 
             self.assertFalse(member._validLogo)
+
+    def testTwitterValid(self):
+        validTwitters = [
+            'dog',
+            'https://twitter.com/dog',
+            'http://twitter.com/dog',
+            'https://www.twitter.com/dog',
+            'http://twitter.com/dog'
+        ]
+
+        for validTwitter in validTwitters:
+            member = Member()
+            member.orgname = 'test'
+            member.twitter = validTwitter
+            self.assertEqual(member.twitter,'https://twitter.com/dog')
+            self.assertTrue(member._validTwitter)
+
+    def testSetLogoNotValid(self):
+        invalidTwitters = [
+            'https://notwitter.com/dog',
+            'http://facebook.com'
+        ]
+
+        for invalidTwitter in invalidTwitters:
+            member = Member()
+            member.orgname = 'test'
+            with self.assertRaises(ValueError,msg="Member.twitter for test must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=invalidTwitter)) as ctx:
+                member.twitter = invalidTwitter
+
+            self.assertFalse(member._validTwitter)
+
+    def testSetTwitterNull(self):
+        member = Member()
+        member.orgname = 'test'
+        member.twitter = None
+        self.assertIsNone(member.twitter)
 
     def testToLandscapeItemAttributes(self):
         member = Member()
@@ -237,7 +302,7 @@ class TestMembers(unittest.TestCase):
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
         members.members.append(member)
         
-        self.assertEquals(len(members.find(member.orgname,member.website)),2)
+        self.assertEqual(len(members.find(member.orgname,member.website)),2)
     
     @patch("LandscapeTools.Members.__abstractmethods__", set())
     def testNormalizeCompanyEmptyOrg(self):

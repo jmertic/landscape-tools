@@ -146,7 +146,7 @@ class Member:
             o = urlparse(twitter)
             if o.netloc == '':
                 twitter = "https://twitter.com/{}".format(twitter)
-            if (o.netloc == "twitter.com" or o.netloc == "www.twitter.com"):
+            elif (o.netloc == "twitter.com" or o.netloc == "www.twitter.com"):
                 twitter = "https://twitter.com{path}".format(path=o.path)
             else:
                 self._validTwitter = False
