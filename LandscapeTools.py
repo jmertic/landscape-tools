@@ -11,7 +11,6 @@ import sys
 import re
 import os
 import os.path
-import json
 import unicodedata
 from os.path import normpath, basename
 from datetime import datetime
@@ -302,8 +301,8 @@ class SFDCMembers(Members):
     def loadData(self):
         print("--Loading SFDC Members data--")
 
-        with urllib.request.urlopen(self.endpointURL.format(self.project)) as projectEndpointUrl:
-            memberList = json.loads(projectEndpointUrl.read().decode())
+        with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
+            memberList = endpointResponse.json()
             for record in memberList:
                 if self.find(record['Name'],record['Website'],record['Membership']['Name']):
                     continue
