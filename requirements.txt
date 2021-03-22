@@ -6,3 +6,4 @@ beautifulsoup4>=4.8.0
 url-normalize>=1.4.2
 tld>=0.12.2
 pycrunchbase>=0.3.8
+responses>=0.13.1

@@ -11,17 +11,9 @@ from unittest.mock import Mock, MagicMock, patch
 from unittest import mock
 import tempfile
 import os
+import responses
 
 from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
-
-# This method will be used by the mock to replace requests.get
-def mocked_requests_get(*args, **kwargs):
-    class MockResponse:
-        def __init__(self):
-            self.content = b'this is image data'
-            self.status_code = 200
-
-    return MockResponse()
 
 class TestConfig(unittest.TestCase):
 
@@ -387,6 +379,65 @@ class TestSFDCMembers(unittest.TestCase):
 
 class TestLandscapeMembers(unittest.TestCase):
 
+    @responses.activate
+    def testLoadData(self):
+        members = LandscapeMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        members.loadData()
+        self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
+        self.assertEqual(members.members[1].orgname,"Blender Foundation")
+
     def testNormalizeLogo(self):
         members = LandscapeMembers(loadData = False)
         self.assertEqual(
@@ -520,16 +571,27 @@ landscape:
             self.assertEqual(len(landscape.landscape['landscape'][0]['subcategories'][0]['items']),0)
             self.assertEqual(landscape.landscapeMembers[0]['name'],"Good")
 
+    @responses.activate
+    def testHostLogo(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def testHostLogo(self,mock_get):
         landscape = LandscapeOutput()
         with tempfile.TemporaryDirectory() as tempdir: 
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','dog'),'dog.svg')
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def testHostLogoUnicode(self,mock_get):
+    @responses.activate
+    def testHostLogoUnicode(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
+
         landscape = LandscapeOutput()
         with tempfile.TemporaryDirectory() as tempdir: 
             landscape.hostedLogosDir = tempdir
