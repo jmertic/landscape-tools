@@ -6,4 +6,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-wget -qO- https://api.crunchbase.com/bulk/v4/bulk_export.tar.gz\?user_key\=92985d13ba92a637d51538e9420b67fe | tar xvz - organizations.csv
+wget -qO- https://api.crunchbase.com/bulk/v4/bulk_export.tar.gz\?user_key\=$CRUNCHBASE_KEY_4 | tar xvz - organizations.csv
