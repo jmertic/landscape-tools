@@ -178,3 +178,4 @@ There are a few common issues that pop up that require intervention.
 
 - Bad logo, either the 'SVG embeds a PNG' error or 'Convert text to glyph'. Tips on how to resolve these errors and get a proper logo are at https://github.com/cncf/landscapeapp#logos, and then refer to the internal instructions for updating logos.
 - Bad crunchbase entry, for this just add the right one in SF for the member under 'Crunchbase URL'
+- `Build failed because of: no headquarter addresses for xxx`, here you need to update the CrunchBase entry to add a location ( details at https://support.crunchbase.com/hc/en-us/articles/360019601394-Updating-a-Company-Profile )
