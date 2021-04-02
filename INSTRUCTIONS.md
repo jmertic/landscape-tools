@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout omp-landscape
+      - name: Checkout Landscape
         uses: actions/checkout@v2
         with:
           path: landscape
