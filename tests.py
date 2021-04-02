@@ -7,23 +7,43 @@
 
 import unittest
 import unittest.mock
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, patch
 from unittest import mock
 import tempfile
 import os
-from unittest.mock import patch
+import responses
 
 from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
 
-# This method will be used by the mock to replace requests.get
-def mocked_requests_get(*args, **kwargs):
-    class MockResponse:
-        def __init__(self):
-            self.content = b'this is image data'
-            self.status_code = 200
+class TestConfig(unittest.TestCase):
 
-    return MockResponse()
+    def testLoadConfig(self):
+        testconfigfilecontents = """
+landscapeName: aswf
+landscapeMemberClasses:
+   - name: Premier Membership
+     category: Premier
+   - name: General Membership
+     category: General
+   - name: Associate Membership
+     category: Associate
+project: a09410000182dD2AAI # Academy Software Foundation
+landscapeMemberCategory: ASWF Member Company
+        """
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
 
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+        self.assertEqual(config.landscapeMemberCategory,"ASWF Member Company")
+        self.assertEqual(config.landscapefile,"landscape.yml")
+        self.assertEqual(config.missingcsvfile,"missing.csv")
+        self.assertEqual(config.landscapeName,"aswf")
+        self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
+
+        os.unlink(tmpfilename.name)
 
 class TestMember(unittest.TestCase):
 
@@ -126,6 +146,42 @@ class TestMember(unittest.TestCase):
 
             self.assertFalse(member._validLogo)
 
+    def testTwitterValid(self):
+        validTwitters = [
+            'dog',
+            'https://twitter.com/dog',
+            'http://twitter.com/dog',
+            'https://www.twitter.com/dog',
+            'http://twitter.com/dog'
+        ]
+
+        for validTwitter in validTwitters:
+            member = Member()
+            member.orgname = 'test'
+            member.twitter = validTwitter
+            self.assertEqual(member.twitter,'https://twitter.com/dog')
+            self.assertTrue(member._validTwitter)
+
+    def testSetLogoNotValid(self):
+        invalidTwitters = [
+            'https://notwitter.com/dog',
+            'http://facebook.com'
+        ]
+
+        for invalidTwitter in invalidTwitters:
+            member = Member()
+            member.orgname = 'test'
+            with self.assertRaises(ValueError,msg="Member.twitter for test must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=invalidTwitter)) as ctx:
+                member.twitter = invalidTwitter
+
+            self.assertFalse(member._validTwitter)
+
+    def testSetTwitterNull(self):
+        member = Member()
+        member.orgname = 'test'
+        member.twitter = None
+        self.assertIsNone(member.twitter)
+
     def testToLandscapeItemAttributes(self):
         member = Member()
         member.orgname = 'test'
@@ -221,6 +277,26 @@ class TestMembers(unittest.TestCase):
         self.assertFalse(members.find('dog','https://bar.com'))
 
     @patch("LandscapeTools.Members.__abstractmethods__", set())
+    def testFindMultiple(self):
+        members = Members()
+        
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        members.members.append(member)
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        members.members.append(member)
+        
+        self.assertEqual(len(members.find(member.orgname,member.website)),2)
+    
+    @patch("LandscapeTools.Members.__abstractmethods__", set())
     def testNormalizeCompanyEmptyOrg(self):
         members = Members(loadData=False)
         self.assertEqual(members.normalizeCompany(None),'')
@@ -246,7 +322,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers()
+        members = SFDCMembers(loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website,member.membership))
@@ -261,23 +337,118 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers()
+        members = SFDCMembers(loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
         self.assertFalse(members.find(member.orgname,member.website,'Silver'))
 
+    @responses.activate
+    def testLoadData(self):
+        members = SFDCMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = SFDCMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertEqual(members.members[0].website,"https://consensys.net/")
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
+    @responses.activate
+    def testLoadDataDuplicates(self):
+        members = SFDCMembers(loadData = False)
+        responses.add(
+            url=members.endpointURL.format(members.project),
+            method=responses.GET,
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = SFDCMembers()
+        self.assertEqual(len(members.members),2)
+
+
 class TestLandscapeMembers(unittest.TestCase):
 
+    @responses.activate
+    def testLoadData(self):
+        members = LandscapeMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        members.loadData()
+        self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
+        self.assertEqual(members.members[1].orgname,"Blender Foundation")
+
     def testNormalizeLogo(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             'https://raw.githubusercontent.com/dog/cat/master/hosted_logos/mouse.svg',
             members.normalizeLogo('mouse.svg','dog/cat')
         )
 
     def testNormalizeLogoIsEmpty(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             '',
             members.normalizeLogo('','dog/cat')
@@ -288,7 +459,7 @@ class TestLandscapeMembers(unittest.TestCase):
         )
 
     def testNormalizeLogoIsURL(self):
-        members = LandscapeMembers()
+        members = LandscapeMembers(loadData = False)
         self.assertEqual(
             'https://foo.com/mouse.svg',
             members.normalizeLogo('https://foo.com/mouse.svg','dog/cat')
@@ -312,8 +483,7 @@ e1393508-30ea-8a36-3f96dd3226033abd,Wetpaint,organization,wetpaint,https://www.c
 
         members = CrunchbaseMembers()
         members.bulkdatafile = tmpfilename.name
-        members.bulkdata = True
-        members.loadData = True
+        members.loadData()
         self.assertTrue(members.find('Wetpaint','http://www.wetpaint.com/'))
         self.assertTrue(members.find('Wetpaint','http://www.foo.com/'))
         self.assertFalse(members.find('Wetpainter','http://www.foo.com/'))
@@ -403,16 +573,27 @@ landscape:
             self.assertEqual(len(landscape.landscape['landscape'][0]['subcategories'][0]['items']),0)
             self.assertEqual(landscape.landscapeMembers[0]['name'],"Good")
 
+    @responses.activate
+    def testHostLogo(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def testHostLogo(self,mock_get):
         landscape = LandscapeOutput()
         with tempfile.TemporaryDirectory() as tempdir: 
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','dog'),'dog.svg')
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def testHostLogoUnicode(self,mock_get):
+    @responses.activate
+    def testHostLogoUnicode(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
+
         landscape = LandscapeOutput()
         with tempfile.TemporaryDirectory() as tempdir: 
             landscape.hostedLogosDir = tempdir

@@ -4,5 +4,7 @@
 *.txt
 __pycache__
 
+*.swp
+
 # add back in for packaging
 !requirements.txt

@@ -1,6 +1,6 @@
 # How this all works?
 
-The main script [landscapemembers.py](landscapemembers.py) is designed to pull a list of all current members of the given project from LF SFDC, using that as the primary source of data for the landscape. Data pulled includes...
+The main script [landscapemembers.py](landscapemembers.py) is designed to pull a list of all current members of the given project from LF Members endpoint, using that as the primary source of data for the landscape. Data pulled includes...
 
 - Member name
 - Website
@@ -10,7 +10,7 @@ The main script [landscapemembers.py](landscapemembers.py) is designed to pull a
 
 The pull will look for active members based on the Purchase History, and respect the 'Don't show logo on website' item if selected.
 
-With the data for things like logos and crunchbase entries, there is often more accurate data in other [landscapes](https://landscapes.dev). The script will attempt to look for this, and overlay data from other landscapes if the data in SFDC is empty. This also pulls in useful data such as `stock_ticker`, which often has to be set to `null` as the Crunchbase data is inaccurate.
+With the data for things like logos and crunchbase entries, there is often more accurate data in other [landscapes](https://landscapes.dev). The script will attempt to look for this, and overlay data from other landscapes if the data from the LF Members endpoint is empty. This also pulls in useful data such as `stock_ticker`, which often has to be set to `null` as the Crunchbase data is inaccurate.
 
 # How to use
 
@@ -18,14 +18,13 @@ You can use this script in a few different ways, but generally one of the below 
 
 ## Recommended - Automatic build with GitHub Actions
 
-Easiest option to do a build is leveraging GitHub Actions, which requires nothing for you to setup on your local machine. You can have it run on demand, or 
-set the `cron` option in the `update_members.yml` action to have it run on a schedule ( this is how it's done for the LF Landscape, which runs nightly at 9:00pm-ish EST ).
+Easiest option to do a build is leveraging GitHub Actions, which requires nothing for you to setup on your local machine. You can have it run on demand, or set the `cron` option in the `update_members.yml` action to have it run on a schedule ( this is how it's done for the LF Landscape, which runs nightly at 9:00pm-ish EST ).
 
 If it's all setup, goto the landscape repo under [Actions](actions). You should see a job called 'Update members' on the right side under 'Workflows'. Click that, then on the next screen click 'Run workflow'
 
 There is some prerequiste setup in GitHub.
 
-1) Add [secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) for `SF_USERNAME`, `SF_PASSWORD`, `SF_TOKEN`, and `PAT`. The first three are part of the [configuration options for the tool](https://github.com/jmertic/landscape-tools/blob/master/README.md#environment-variables), and `PAT` is a [GitHub Personal Authorization Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) set for the `repo` scope.
+1) Add [secrets](https://docs.github.com/en/actions/reference/encrypted-secrets) for `PAT`, which is a [GitHub Personal Authorization Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) set for the `repo` scope.
 2) [Add two new labels](https://docs.github.com/en/github/managing-your-work-on-github/managing-labels#creating-a-label) - `automerge` and `automated-build`. These are for this workflow to all work and shouldn't be used for anything else.
 
 Actions are stored in the `.github/workflows` directory. There are three to create if you want to do the entire workflow, including having it autocommit if the build all works successfully.
@@ -47,7 +46,7 @@ jobs:
       - name: Checkout omp-landscape
         uses: actions/checkout@v2
         with:
-          path: master
+          path: landscape
       - name: Checkout landscape-tools
         uses: actions/checkout@v2
         with:
@@ -62,24 +61,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r landscape-tools/requirements.txt
       - name: Run build
-        working-directory: ./main
-        env:
-          SF_USERNAME: ${{ secrets.SF_USERNAME }}
-          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
-          SF_TOKEN: ${{ secrets.SF_TOKEN }}
+        working-directory: ./landscape
         run: |
           ../landscape-tools/landscapemembers.py
       - name: Save missing.csv file
         uses: actions/upload-artifact@v2
         with:
           name: missing-members 
-          path: ./main/missing.csv
+          path: ./landscape/missing.csv
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.PAT }}
           branch-suffix: timestamp
-          path: ./main
+          path: ./landscape
           title: Update members
           labels: automated-build
           commit-message: Update members
