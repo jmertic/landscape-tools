@@ -213,7 +213,7 @@ class Member:
             if key == "name":
                 key = "orgname"
             try:
-                if (not hasattr(membertooverlay,key) or not getattr(membertooverlay,key)) or (key == 'crunchbase' and value != getattr(membertooverlay,key)):
+                if (not hasattr(membertooverlay,key) or not getattr(membertooverlay,key)): 
                     print("...Overlay "+key)
                     print(".....Old Value - '{}'".format(getattr(membertooverlay,key) if hasattr(membertooverlay,key) else'empty'))
                     print(".....New Value - '{}'".format(value if value else 'empty'))

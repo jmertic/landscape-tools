@@ -224,13 +224,13 @@ class TestMember(unittest.TestCase):
         membertooverlay.website = 'https://foo.com'
         membertooverlay.logo = 'gold.svg'
         membertooverlay.membership = 'Gold'
-        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
 
         member = Member()
         member.orgname = 'test'
         member.website = 'https://foo.org'
         member.membership = 'Silver'
-        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
         member.twitter = 'https://twitter.com/mytwitter'
         member.stock_ticker = None
 

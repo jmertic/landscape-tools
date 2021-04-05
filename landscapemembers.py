@@ -52,7 +52,7 @@ def main():
                 
                 # overlay crunchbase data
                 for cbmember in cbmembers.find(member.orgname,member.website):
-                    if (not member.crunchbase and cbmember) or (cbmember and member.crunchbase != cbmember.crunchbase):
+                    if (not member.crunchbase and cbmember):
                         print("...Updating crunchbase from Crunchbase")
                         member.crunchbase = cbmember.crunchbase
                         
