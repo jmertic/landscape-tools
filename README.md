@@ -27,7 +27,7 @@ If you wish to use crunchbase as a data source, add this command.
 
 ## Configuration
 
-All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables, or passing a `-c` option to the script with a path to the config file. Settings are below...
+All of the Python scripts depend on a `config.yaml` file being present in the same directory as the script to provide any configuration variables, or passing a `-c` option to the script with a path to the config file. Settings are below.
 
 ```yaml
 landscapeName: # short name of your landscape - matches entry at https://github.com/cncf/landscapeapp/blob/master/landscapes.yml
