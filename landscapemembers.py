@@ -5,10 +5,14 @@
 #
 # encoding=utf8
 
-from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
+from landscape_tools.config import Config
+from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.landscapemembers import LandscapeMembers
+from landscape_tools.crunchbasemembers import CrunchbaseMembers
+from landscape_tools.landscapeoutput import LandscapeOutput
+
 from datetime import datetime
 from argparse import ArgumentParser,FileType
-import os.path
 from os import path
 
 def main():

@@ -13,7 +13,13 @@ import tempfile
 import os
 import responses
 
-from LandscapeTools import Config, Member, Members, SFDCMembers, LandscapeMembers, CrunchbaseMembers, LandscapeOutput
+from landscape_tools.config import Config
+from landscape_tools.member import Member
+from landscape_tools.members import Members
+from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.landscapemembers import LandscapeMembers
+from landscape_tools.crunchbasemembers import CrunchbaseMembers
+from landscape_tools.landscapeoutput import LandscapeOutput
 
 class TestConfig(unittest.TestCase):
 
@@ -248,7 +254,7 @@ class TestMember(unittest.TestCase):
 
 class TestMembers(unittest.TestCase):
 
-    @patch("LandscapeTools.Members.__abstractmethods__", set())
+    @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testFind(self):
         member = Member()
         member.orgname = 'test'
@@ -263,7 +269,7 @@ class TestMembers(unittest.TestCase):
         self.assertTrue(members.find('dog',member.website))
         self.assertTrue(members.find(member.orgname,'https://bar.com'))
 
-    @patch("LandscapeTools.Members.__abstractmethods__", set())
+    @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testFindFail(self):
         member = Member()
         member.orgname = 'test'
@@ -276,7 +282,7 @@ class TestMembers(unittest.TestCase):
 
         self.assertFalse(members.find('dog','https://bar.com'))
 
-    @patch("LandscapeTools.Members.__abstractmethods__", set())
+    @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testFindMultiple(self):
         members = Members()
         
@@ -296,12 +302,12 @@ class TestMembers(unittest.TestCase):
         
         self.assertEqual(len(members.find(member.orgname,member.website)),2)
     
-    @patch("LandscapeTools.Members.__abstractmethods__", set())
+    @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testNormalizeCompanyEmptyOrg(self):
         members = Members(loadData=False)
         self.assertEqual(members.normalizeCompany(None),'')
 
-    @patch("LandscapeTools.Members.__abstractmethods__", set())
+    @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testNormalizeCompany(self):
         companies = [
             {"name":"Foo","normalized":"Foo"},
