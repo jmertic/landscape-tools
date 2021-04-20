@@ -376,6 +376,9 @@ class LandscapeMembers(Members):
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
             settingsYaml = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+            # skip landscape if not well formed
+            if 'global' not in settingsYaml or settingsYaml['global'] is None or 'membership' not in settingsYaml['global']:
+                continue
             membershipKey = settingsYaml['global']['membership']
 
             # then load in members only
@@ -547,23 +550,26 @@ class LandscapeOutput:
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
             self.landscape = ruamel.yaml.load(fileobject, Loader=ruamel.yaml.RoundTripLoader)
-            if reset:
-                for landscapeMemberClass in self.landscapeMemberClasses:
-                    memberClass = {
-                        "subcategory": None,
-                        "name": landscapeMemberClass['category'],
-                        "items" : []
-                    }
-                    if memberClass not in self.landscapeMembers:
-                        self.landscapeMembers.append(memberClass)
-
-                for x in self.landscape['landscape']:
-                    if x['name'] == self.landscapeMemberCategory:
-                        x['subcategories'] = self.landscapeMembers
+            if not self.landscape or not self.landscape['landscape']:
+                self.newLandscape()
             else:
-                for x in self.landscape['landscape']:
-                    if x['name'] == self.landscapeMemberCategory:
-                        self.landscapeMembers = x['subcategories']
+                if reset:
+                    for landscapeMemberClass in self.landscapeMemberClasses:
+                        memberClass = {
+                            "subcategory": None,
+                            "name": landscapeMemberClass['category'],
+                            "items" : []
+                        }
+                        if memberClass not in self.landscapeMembers:
+                            self.landscapeMembers.append(memberClass)
+
+                    for x in self.landscape['landscape']:
+                        if x['name'] == self.landscapeMemberCategory:
+                            x['subcategories'] = self.landscapeMembers
+                else:
+                    for x in self.landscape['landscape']:
+                        if x['name'] == self.landscapeMemberCategory:
+                            self.landscapeMembers = x['subcategories']
 
     def writeMissing(self, name, logo, homepage_url, crunchbase):
         if self._missingcsvfilewriter is None:

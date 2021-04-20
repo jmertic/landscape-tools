@@ -440,6 +440,63 @@ landscape:
         self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
         self.assertEqual(members.members[1].orgname,"Blender Foundation")
 
+    @responses.activate
+    def testLoadDataBadLandscape(self):
+        members = LandscapeMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        members.loadData()
+        self.assertEqual(len(members.members),0)
+
     def testNormalizeLogo(self):
         members = LandscapeMembers(loadData = False)
         self.assertEqual(
@@ -572,6 +629,25 @@ landscape:
             self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][0]['name'],"Good")
             self.assertEqual(len(landscape.landscape['landscape'][0]['subcategories'][0]['items']),0)
             self.assertEqual(landscape.landscapeMembers[0]['name'],"Good")
+
+    def testLoadLandscapeEmpty(self):
+        testlandscape = ""
+        with tempfile.NamedTemporaryFile(mode='w') as tmpfilename:
+            tmpfilename.write(testlandscape)
+            tmpfilename.flush()
+
+            landscape = LandscapeOutput()
+            landscape.landscapeMemberCategory = 'test me'
+            landscape.landscapeMemberClasses = [
+                {"name": "Good Membership", "category": "Good"},
+                {"name": "Bad Membership", "category": "Bad"}
+                ]
+            landscape.landscapefile = tmpfilename.name
+            landscape.loadLandscape(reset=True)
+
+            self.assertEqual(landscape.landscape['landscape'][0]['name'],'test me')
+            self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][0]['name'],"Good")
+            self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][1]['name'],"Bad")
 
     @responses.activate
     def testHostLogo(self):
