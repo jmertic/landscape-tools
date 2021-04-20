@@ -16,7 +16,6 @@ Current tools are:
 ```bash
 git clone https://github.com/jmertic/landscape-tools
 cd landscape-tools
-chmod +x *.py
 pip install -r requirements.txt
 ```
 
