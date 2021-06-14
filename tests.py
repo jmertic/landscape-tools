@@ -88,13 +88,14 @@ class TestMember(unittest.TestCase):
 
     def testSetWebsiteValid(self):
         validWebsiteURLs = [
-            'https://crunchbase.com/'
+            {'before':'https://crunchbase.com/','after':'https://crunchbase.com/'},
+            {'before':'sony.com/en','after':'https://sony.com/en'}
         ]
 
         for validWebsiteURL in validWebsiteURLs:
             member = Member()
-            member.website = validWebsiteURL
-            self.assertEqual(member.website,validWebsiteURL)
+            member.website = validWebsiteURL['before']
+            self.assertEqual(member.website,validWebsiteURL['after'])
             self.assertTrue(member._validWebsite)
 
     def testSetWebsiteNotValidOnEmpty(self):
