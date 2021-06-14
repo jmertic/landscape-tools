@@ -64,7 +64,7 @@ class LandscapeOutput:
 
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
-            self.landscape = ruamel.yaml.load(fileobject, Loader=ruamel.yaml.RoundTripLoader)
+            self.landscape = ruamel.yaml.YAML(typ='unsafe', pure=True).load(fileobject)
             if not self.landscape or not self.landscape['landscape']:
                 self.newLandscape()
             else:

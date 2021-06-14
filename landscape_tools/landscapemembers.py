@@ -29,7 +29,7 @@ class LandscapeMembers(Members):
         print("--Loading other landscape members data--")
 
         response = requests.get(self.landscapeListYAML)
-        landscapeList = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+        landscapeList = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
 
         for landscape in landscapeList['landscapes']:
             if landscape['name'] in self.skipLandscapes:
@@ -39,7 +39,7 @@ class LandscapeMembers(Members):
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
-            settingsYaml = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+            settingsYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content) 
             # skip landscape if not well formed
             if 'global' not in settingsYaml or settingsYaml['global'] is None or 'membership' not in settingsYaml['global']:
                 continue
@@ -47,7 +47,7 @@ class LandscapeMembers(Members):
 
             # then load in members only
             response = requests.get(self.landscapeLandscapeYAML.format(repo=landscape['repo']))
-            landscapeYaml = ruamel.yaml.load(response.content, Loader=ruamel.yaml.RoundTripLoader)
+            landscapeYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
             for category in landscapeYaml['landscape']:
                 if membershipKey in category['name']:
                     for subcategory in category['subcategories']:
