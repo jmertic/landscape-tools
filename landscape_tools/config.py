@@ -22,7 +22,7 @@ class Config:
         if config_file != '' and os.path.isfile(config_file):
             try:
                 with open(config_file, 'r') as stream:
-                    data_loaded = ruamel.yaml.safe_load(stream)
+                    data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(stream)
             except:
                 sys.exit(config_file+" config file is not defined")
 
