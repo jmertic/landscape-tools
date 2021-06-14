@@ -62,10 +62,12 @@ class Member:
             self._validWebsite = False
             raise ValueError("Member.website must be not be blank for {orgname}".format(orgname=self.orgname))
 
-        normalizedwebsite = url_normalize(get_fld(url_normalize(website), fail_silently=True), default_scheme='https')
+        normalizedwebsite = url_normalize(website, default_scheme='https')
         if not normalizedwebsite:
-            self._validWebsite = False
-            raise ValueError("Member.website for {orgname} must be set to a valid website - '{website}' provided".format(website=website,orgname=self.orgname))
+            normalizedwebsite = url_normalize(get_fld(url_normalize(website), fail_silently=True), default_scheme='https')
+            if not normalizedwebsite:
+                self._validWebsite = False
+                raise ValueError("Member.website for {orgname} must be set to a valid website - '{website}' provided".format(website=website,orgname=self.orgname))
 
         self._validWebsite = True
         self.__website = normalizedwebsite
