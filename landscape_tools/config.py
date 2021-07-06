@@ -38,4 +38,5 @@ class Config:
                 self.missingcsvfile = data_loaded['missingcsvfile']
             if 'landscapeName' in data_loaded:
                 self.landscapeName = data_loaded['landscapeName']
-
+            if 'memberSuffix' in data_loaded:
+                self.memberSuffix = data_loaded['memberSuffix']

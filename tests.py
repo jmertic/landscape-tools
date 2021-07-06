@@ -35,7 +35,8 @@ landscapeMemberClasses:
      category: Associate
 project: a09410000182dD2AAI # Academy Software Foundation
 landscapeMemberCategory: ASWF Member Company
-        """
+memberSuffix = " (help)"
+"""
         tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
         tmpfilename.write(testconfigfilecontents)
         tmpfilename.close()
@@ -48,6 +49,7 @@ landscapeMemberCategory: ASWF Member Company
         self.assertEqual(config.missingcsvfile,"missing.csv")
         self.assertEqual(config.landscapeName,"aswf")
         self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
+        self.assertEqual(config.memberSuffix," (help)")
 
         os.unlink(tmpfilename.name)
 
@@ -206,6 +208,26 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict.popitem(),('homepage_url', member.website))
         self.assertEqual(dict.popitem(),('name', member.orgname))
         self.assertEqual(dict.popitem(),('item', None))
+
+    def testToLandscapeItemAttributesWithSuffix(self):
+        member = Member()
+        member.entrysuffix = ' (testme)'
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.membership = 'Gold'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        dict = member.toLandscapeItemAttributes()
+
+        self.assertEqual(dict['name'],member.orgname+" (testme)")
+        self.assertEqual(dict['homepage_url'],member.website)
+        self.assertEqual(dict['crunchbase'],member.crunchbase)
+        self.assertNotIn('membership',dict)
+        self.assertEqual(dict.popitem(),('crunchbase', member.crunchbase))
+        self.assertEqual(dict.popitem(),('logo', None))
+        self.assertEqual(dict.popitem(),('homepage_url', member.website))
+        self.assertEqual(dict.popitem(),('name', member.orgname+" (testme)"))
+        self.assertEqual(dict.popitem(),('item', None))
+
 
     def testIsValidLandscapeItem(self):
         member = Member()
