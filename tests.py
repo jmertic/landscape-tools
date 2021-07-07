@@ -35,7 +35,7 @@ landscapeMemberClasses:
      category: Associate
 project: a09410000182dD2AAI # Academy Software Foundation
 landscapeMemberCategory: ASWF Member Company
-memberSuffix = " (help)"
+memberSuffix: " (help)"
 """
         tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
         tmpfilename.write(testconfigfilecontents)
