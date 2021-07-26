@@ -30,7 +30,9 @@ class Member:
     _validLogo = False
     _validCrunchbase = False
     _validTwitter = False
-    
+   
+    entrysuffix = ''
+
     @property
     def crunchbase(self):
         return self.__crunchbase
@@ -137,7 +139,7 @@ class Member:
 
         for i in allowedKeys:
             if i == 'name':
-                returnentry['name'] = self.orgname
+                returnentry['name'] = self.orgname + self.entrysuffix
             elif i == 'homepage_url':
                 returnentry['homepage_url'] = self.website
             elif i == 'twitter' and ( not self.twitter or self.twitter == ''):
