@@ -37,6 +37,13 @@ class LandscapeOutput:
     membersUpdated = 0
     membersErrors = 0
 
+    landscapeProjectTaxonmony = [
+        {"name": "Projects", "subcategories": [
+            {"name": "All"}
+        ]}
+    ]
+    landscapeProjectsReplace = True
+
     def __init__(self, loadLandscape = False):
         if loadLandscape:
             self.loadLandscape()
@@ -62,9 +69,11 @@ class LandscapeOutput:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
 
+        
+
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
-            self.landscape = ruamel.yaml.YAML(typ='unsafe', pure=True).load(fileobject)
+            self.landscape = ruamel.yaml.YAML().load(fileobject)
             if not self.landscape or not self.landscape['landscape']:
                 self.newLandscape()
             else:

@@ -24,13 +24,33 @@ class Member:
     __logo = None
     __crunchbase = None
     __twitter = None
+    __repo_url = None
 
     # we'll use these to keep track of whether the member has valid fields
     _validWebsite = False
     _validLogo = False
     _validCrunchbase = False
     _validTwitter = False
-    
+    _validRepo = False
+
+    @property
+    def repo_url(self):
+        return self.__repo_url
+
+    @repo_url.setter
+    def repo_url(self, repo_url):
+        if repo_url is None:
+            self._validRepo = False
+            raise ValueError("repo_url must be not be blank for {orgname}".format(orgname=self.orgname))
+        if not repo_url.startswith('https://github.com/'):
+            self._validRepo = False
+            raise ValueError("repo_url must be for GitHub for {orgname}".format(orgname=self.orgname))
+
+        self._validRepo = True
+        self.__repo_url = repo_url
+
+
+
     @property
     def crunchbase(self):
         return self.__crunchbase
