@@ -17,6 +17,7 @@ class Config:
     project = 'tlf' # The Linux Foundation
     landscapefile = 'landscape.yml'
     missingcsvfile = 'missing.csv'
+    memberSuffix = None
 
     def __init__(self, config_file):
         if config_file != '' and os.path.isfile(config_file):
