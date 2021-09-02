@@ -68,14 +68,21 @@ class SFDCProjects(Members):
                         pass
                 self.members.append(member)
 
-    def find(self, org, website, membership):
+    def find(self, org, website, membership = None, repo_url = None):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
         members = []
         for member in self.members:
-            if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
-                members.append(member)
-
+            if membership:
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
+                    members.append(member)
+            elif repo_url:
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website or self.repo_url == repo_url)
+                    members.append(member)
+            else:
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website )
+                    members.append(member)
+                
         return members
 

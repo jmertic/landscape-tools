@@ -39,17 +39,12 @@ class Member:
 
     @repo_url.setter
     def repo_url(self, repo_url):
-        if repo_url is None:
-            self._validRepo = False
-            raise ValueError("repo_url must be not be blank for {orgname}".format(orgname=self.orgname))
         if not repo_url.startswith('https://github.com/'):
             self._validRepo = False
             raise ValueError("repo_url must be for GitHub for {orgname}".format(orgname=self.orgname))
 
         self._validRepo = True
         self.__repo_url = repo_url
-
-
 
     @property
     def crunchbase(self):
