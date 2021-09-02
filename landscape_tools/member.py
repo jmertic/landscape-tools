@@ -147,10 +147,14 @@ class Member:
             elif hasattr(self,i):
                 returnentry[i] = getattr(self,i)
 
+        if not self.crunchbase:
+            returnentry['organization'] = {'name':self.orgname}
+            del returnentry['crunchbase']
+
         return returnentry
         
     def isValidLandscapeItem(self):
-        return self._validWebsite and self._validLogo and self._validCrunchbase and self.orgname != ''
+        return self._validWebsite and self._validLogo and self.orgname != ''
 
     #
     # Overlay this Member data on another Member
