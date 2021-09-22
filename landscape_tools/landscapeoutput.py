@@ -117,9 +117,15 @@ class LandscapeOutput:
 
     def updateLandscape(self):
         # now write it back
+        found = False
         for x in self.landscape['landscape']:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
+                found = True
+                continue
+
+        if not found:
+            print("Couldn't find the membership category in landscape.yml to update - please check your config.yaml settings")
 
         landscapefileoutput = Path(self.landscapefile)
         ryaml = ruamel.yaml.YAML()
