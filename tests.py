@@ -209,6 +209,23 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict.popitem(),('name', member.orgname))
         self.assertEqual(dict.popitem(),('item', None))
 
+    def testToLandscapeItemAttributesEmptyCrunchbase(self):
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.membership = 'Gold'
+        dict = member.toLandscapeItemAttributes()
+
+        self.assertEqual(dict['name'],member.orgname)
+        self.assertEqual(dict['homepage_url'],member.website)
+        self.assertEqual(dict['organization']['name'],member.orgname)
+        self.assertNotIn('crunchbase',dict)
+        self.assertEqual(dict.popitem(),('organization', {'name':member.orgname}))
+        self.assertEqual(dict.popitem(),('logo', None))
+        self.assertEqual(dict.popitem(),('homepage_url', member.website))
+        self.assertEqual(dict.popitem(),('name', member.orgname))
+        self.assertEqual(dict.popitem(),('item', None))
+    
     def testToLandscapeItemAttributesWithSuffix(self):
         member = Member()
         member.entrysuffix = ' (testme)'
@@ -238,6 +255,14 @@ class TestMember(unittest.TestCase):
 
         self.assertTrue(member.isValidLandscapeItem())
 
+    def testIsValidLandscapeItemEmptyCrunchbase(self):
+        member = Member()
+        member.orgname = 'test3'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+
+        self.assertTrue(member.isValidLandscapeItem())
+    
     def testIsValidLandscapeItemEmptyOrgname(self):
         member = Member()
         member.orgname = ''
