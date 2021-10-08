@@ -75,6 +75,8 @@ def main():
                     lflandscape.membersAdded += 1
                     # host the logo
                     member.logo = lflandscape.hostLogo(logo=member.logo,orgname=member.orgname)
+                    if config.memberSuffix:
+                        member.entrysuffix = config.memberSuffix
                     memberClass['items'].append(member.toLandscapeItemAttributes())
                 break
 
