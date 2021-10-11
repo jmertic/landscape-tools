@@ -7,6 +7,7 @@
 
 from landscape_tools.config import Config
 from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.sfdcprojects import SFDCProjects
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -79,6 +80,12 @@ def main():
                         member.entrysuffix = config.memberSuffix
                     memberClass['items'].append(member.toLandscapeItemAttributes())
                 break
+
+    # Interate through SFDCProjects and update the landscapeMembers
+    sfdcprojects = SFDCProjects(project = config.project)
+    for project in sfdcprojects.members:
+        print("Processing "+member.orgname)
+
 
     lflandscape.updateLandscape()
     print("This took "+str(datetime.now() - startTime)+" seconds")

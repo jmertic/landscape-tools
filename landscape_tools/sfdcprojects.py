@@ -18,6 +18,9 @@ class SFDCProjects(Members):
     defaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?$filter=parentSlug%20eq%20{}'
 
+    defaultCategory = ''
+    defaultSubcategory = ''
+
     def __init__(self, project = None, loadData = True):
 
         if project:
