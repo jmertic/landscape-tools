@@ -729,6 +729,20 @@ landscape:
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'privee.svg')
     
+    @responses.activate
+    def testHostLogoNonASCII(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            logofile = landscape.hostLogo('https://someurl.com/boom.svg','北京数悦铭金技术有限公司')
+            self.assertTrue(os.path.exists(landscape.hostedLogosDir+"/"+logofile))
+    
     def testHostLogoNotURL(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')

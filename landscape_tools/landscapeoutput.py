@@ -10,6 +10,7 @@ import csv
 import re
 import os
 import unicodedata
+import tempfile
 from pathlib import Path
 
 ## third party modules
@@ -104,13 +105,18 @@ class LandscapeOutput:
         filename = filename.replace(',', '')
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         filename = filename.lower()
-        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg") 
-
+        filename = unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg" 
+        
+        ## create a random file name in case somehow the generated one doesn't work
+        if filename == ".svg":
+            filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
+        
+        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
         r = requests.get(logo, allow_redirects=True)
         with open(filenamepath, 'wb') as fp:
             fp.write(r.content)
 
-        return unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg"
+        return filename
 
     def _removeNulls(self,yamlout):
         return re.sub('/(- \w+:) null/g', '$1', yamlout)
