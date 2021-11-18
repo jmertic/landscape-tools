@@ -279,6 +279,7 @@ class TestMember(unittest.TestCase):
         membertooverlay.logo = 'gold.svg'
         membertooverlay.membership = 'Gold'
         membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        membertooverlay.organization = {'name':'foo'} 
 
         member = Member()
         member.orgname = 'test'
@@ -296,8 +297,8 @@ class TestMember(unittest.TestCase):
         self.assertEqual(member.membership,'Silver')
         self.assertEqual(member.crunchbase, 'https://www.crunchbase.com/organization/visual-effects-society')
         self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
-        self.assertEqual(member.stock_ticker,None)
-        
+        self.assertIsNone(member.stock_ticker)
+        self.assertFalse(hasattr(member,'organization'))
 
 
 class TestMembers(unittest.TestCase):
