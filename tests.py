@@ -744,6 +744,36 @@ landscape:
             logofile = landscape.hostLogo('https://someurl.com/boom.svg','北京数悦铭金技术有限公司')
             self.assertTrue(os.path.exists(landscape.hostedLogosDir+"/"+logofile))
     
+    @responses.activate
+    def testHostLogoContainsPNG(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data data:image/png dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
+    
+    @responses.activate
+    def testHostLogoContainsText(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data <text /> dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
+    
+    def testHostLogoLogoisNone(self):
+        landscape = LandscapeOutput()
+        self.assertEqual(landscape.hostLogo(None,'dog'),None)
+    
     def testHostLogoNotURL(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')
