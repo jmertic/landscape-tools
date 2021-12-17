@@ -749,7 +749,7 @@ landscape:
         responses.add(
             method=responses.GET,
             url='https://someurl.com/boom.svg',
-            body=b'this is image data data:image/png dfdfdf'
+            body=b'this is image data data:image/png;base64 dfdfdf'
             )
 
         landscape = LandscapeOutput()
