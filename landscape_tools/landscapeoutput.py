@@ -96,7 +96,7 @@ class LandscapeOutput:
         self._missingcsvfilewriter.writerow([name, logo, homepage_url, crunchbase])
 
     def hostLogo(self,logo,orgname):
-        if 'https://' not in logo and 'http://' not in logo:
+        if logo is None or ('https://' not in logo and 'http://' not in logo):
             return logo
 
         print("...Hosting logo for "+orgname)
@@ -114,6 +114,10 @@ class LandscapeOutput:
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
         r = requests.get(logo, allow_redirects=True)
         with open(filenamepath, 'wb') as fp:
+            # catch places where autocrop will reject the image
+            if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
+                return '';
+
             fp.write(r.content)
 
         return filename
