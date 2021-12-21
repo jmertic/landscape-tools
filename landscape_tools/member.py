@@ -20,6 +20,7 @@ class Member:
 
     orgname = None
     membership = None
+    entrysuffix = ''
     __website = None
     __logo = None
     __crunchbase = None
@@ -179,7 +180,7 @@ class Member:
         memberitems = self.toLandscapeItemAttributes().items()
 
         for key, value in memberitems:
-            if key in ['item','name']:
+            if key in ['item','name','organization']:
                 continue
             if onlykeys and key not in onlykeys:
                 continue
