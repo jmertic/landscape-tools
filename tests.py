@@ -35,7 +35,8 @@ landscapeMemberClasses:
      category: Associate
 project: a09410000182dD2AAI # Academy Software Foundation
 landscapeMemberCategory: ASWF Member Company
-        """
+memberSuffix: " (help)"
+"""
         tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
         tmpfilename.write(testconfigfilecontents)
         tmpfilename.close()
@@ -48,6 +49,7 @@ landscapeMemberCategory: ASWF Member Company
         self.assertEqual(config.missingcsvfile,"missing.csv")
         self.assertEqual(config.landscapeName,"aswf")
         self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
+        self.assertEqual(config.memberSuffix," (help)")
 
         os.unlink(tmpfilename.name)
 
@@ -207,6 +209,43 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict.popitem(),('name', member.orgname))
         self.assertEqual(dict.popitem(),('item', None))
 
+    def testToLandscapeItemAttributesEmptyCrunchbase(self):
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.membership = 'Gold'
+        dict = member.toLandscapeItemAttributes()
+
+        self.assertEqual(dict['name'],member.orgname)
+        self.assertEqual(dict['homepage_url'],member.website)
+        self.assertEqual(dict['organization']['name'],member.orgname)
+        self.assertNotIn('crunchbase',dict)
+        self.assertEqual(dict.popitem(),('organization', {'name':member.orgname}))
+        self.assertEqual(dict.popitem(),('logo', None))
+        self.assertEqual(dict.popitem(),('homepage_url', member.website))
+        self.assertEqual(dict.popitem(),('name', member.orgname))
+        self.assertEqual(dict.popitem(),('item', None))
+    
+    def testToLandscapeItemAttributesWithSuffix(self):
+        member = Member()
+        member.entrysuffix = ' (testme)'
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        member.membership = 'Gold'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        dict = member.toLandscapeItemAttributes()
+
+        self.assertEqual(dict['name'],member.orgname+" (testme)")
+        self.assertEqual(dict['homepage_url'],member.website)
+        self.assertEqual(dict['crunchbase'],member.crunchbase)
+        self.assertNotIn('membership',dict)
+        self.assertEqual(dict.popitem(),('crunchbase', member.crunchbase))
+        self.assertEqual(dict.popitem(),('logo', None))
+        self.assertEqual(dict.popitem(),('homepage_url', member.website))
+        self.assertEqual(dict.popitem(),('name', member.orgname+" (testme)"))
+        self.assertEqual(dict.popitem(),('item', None))
+
+
     def testIsValidLandscapeItem(self):
         member = Member()
         member.orgname = 'test'
@@ -216,6 +255,14 @@ class TestMember(unittest.TestCase):
 
         self.assertTrue(member.isValidLandscapeItem())
 
+    def testIsValidLandscapeItemEmptyCrunchbase(self):
+        member = Member()
+        member.orgname = 'test3'
+        member.website = 'https://foo.com'
+        member.logo = 'Gold.svg'
+
+        self.assertTrue(member.isValidLandscapeItem())
+    
     def testIsValidLandscapeItemEmptyOrgname(self):
         member = Member()
         member.orgname = ''
@@ -232,6 +279,7 @@ class TestMember(unittest.TestCase):
         membertooverlay.logo = 'gold.svg'
         membertooverlay.membership = 'Gold'
         membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        membertooverlay.organization = {'name':'foo'} 
 
         member = Member()
         member.orgname = 'test'
@@ -249,8 +297,8 @@ class TestMember(unittest.TestCase):
         self.assertEqual(member.membership,'Silver')
         self.assertEqual(member.crunchbase, 'https://www.crunchbase.com/organization/visual-effects-society')
         self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
-        self.assertEqual(member.stock_ticker,None)
-        
+        self.assertIsNone(member.stock_ticker)
+        self.assertFalse(hasattr(member,'organization'))
 
 
 class TestMembers(unittest.TestCase):
@@ -681,6 +729,50 @@ landscape:
         with tempfile.TemporaryDirectory() as tempdir: 
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'privee.svg')
+    
+    @responses.activate
+    def testHostLogoNonASCII(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            logofile = landscape.hostLogo('https://someurl.com/boom.svg','北京数悦铭金技术有限公司')
+            self.assertTrue(os.path.exists(landscape.hostedLogosDir+"/"+logofile))
+    
+    @responses.activate
+    def testHostLogoContainsPNG(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data data:image/png;base64 dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
+    
+    @responses.activate
+    def testHostLogoContainsText(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data <text /> dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
+    
+    def testHostLogoLogoisNone(self):
+        landscape = LandscapeOutput()
+        self.assertEqual(landscape.hostLogo(None,'dog'),None)
     
     def testHostLogoNotURL(self):
         landscape = LandscapeOutput()

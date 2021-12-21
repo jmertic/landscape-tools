@@ -20,6 +20,7 @@ class Member:
 
     orgname = None
     membership = None
+    entrysuffix = ''
     __website = None
     __logo = None
     __crunchbase = None
@@ -152,7 +153,7 @@ class Member:
 
         for i in allowedKeys:
             if i == 'name':
-                returnentry['name'] = self.orgname
+                returnentry['name'] = self.orgname + self.entrysuffix
             elif i == 'homepage_url':
                 returnentry['homepage_url'] = self.website
             elif i == 'twitter' and ( not self.twitter or self.twitter == ''):
@@ -160,10 +161,14 @@ class Member:
             elif hasattr(self,i):
                 returnentry[i] = getattr(self,i)
 
+        if not self.crunchbase:
+            returnentry['organization'] = {'name':self.orgname}
+            del returnentry['crunchbase']
+
         return returnentry
         
     def isValidLandscapeItem(self):
-        return self._validWebsite and self._validLogo and self._validCrunchbase and self.orgname != ''
+        return self._validWebsite and self._validLogo and self.orgname != ''
 
     #
     # Overlay this Member data on another Member
@@ -173,7 +178,7 @@ class Member:
         memberitems = self.toLandscapeItemAttributes().items()
 
         for key, value in memberitems:
-            if key in ['item','name']:
+            if key in ['item','name','organization']:
                 continue
             if onlykeys and key not in onlykeys:
                 continue

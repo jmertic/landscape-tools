@@ -10,6 +10,7 @@ import csv
 import re
 import os
 import unicodedata
+import tempfile
 from pathlib import Path
 
 ## third party modules
@@ -104,7 +105,7 @@ class LandscapeOutput:
         self._missingcsvfilewriter.writerow([name, logo, homepage_url, crunchbase])
 
     def hostLogo(self,logo,orgname):
-        if 'https://' not in logo and 'http://' not in logo:
+        if logo is None or ('https://' not in logo and 'http://' not in logo):
             return logo
 
         print("...Hosting logo for "+orgname)
@@ -113,22 +114,37 @@ class LandscapeOutput:
         filename = filename.replace(',', '')
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         filename = filename.lower()
-        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg") 
-
+        filename = unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg" 
+        
+        ## create a random file name in case somehow the generated one doesn't work
+        if filename == ".svg":
+            filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
+        
+        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
         r = requests.get(logo, allow_redirects=True)
         with open(filenamepath, 'wb') as fp:
+            # catch places where autocrop will reject the image
+            if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
+                return '';
+
             fp.write(r.content)
 
-        return unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg"
+        return filename
 
     def _removeNulls(self,yamlout):
         return re.sub('/(- \w+:) null/g', '$1', yamlout)
 
     def updateLandscape(self):
         # now write it back
+        found = False
         for x in self.landscape['landscape']:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
+                found = True
+                continue
+
+        if not found:
+            print("Couldn't find the membership category in landscape.yml to update - please check your config.yaml settings")
 
         landscapefileoutput = Path(self.landscapefile)
         ryaml = ruamel.yaml.YAML()
