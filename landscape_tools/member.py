@@ -42,7 +42,7 @@ class Member:
 
     @repo_url.setter
     def repo_url(self, repo_url):
-        if not repo_url.startswith('https://github.com/'):
+        if repo_url is not None and not repo_url.startswith('https://github.com/'):
             self._validRepo = False
             raise ValueError("repo_url must be for GitHub for {orgname}".format(orgname=self.orgname))
 
