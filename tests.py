@@ -496,6 +496,64 @@ landscape:
         self.assertEqual(members.members[1].orgname,"Blender Foundation")
 
     @responses.activate
+    def testLoadDataInvalidYAML(self):
+        members = LandscapeMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://aswf.io
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        self.assertRaises(Exception,members.loadData())
+    
+    @responses.activate
     def testLoadDataBadLandscape(self):
         members = LandscapeMembers(loadData = False)
         responses.add(
