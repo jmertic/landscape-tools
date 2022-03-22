@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 ## third party modules
 from url_normalize import url_normalize
 import validators
-
+from github import Github, GithubException, UnknownObjectException
 #
 # Member object to ensure we have normalization on fields. Only required fields are defined; others can be added dynamically.
 #
@@ -45,6 +45,19 @@ class Member:
         if repo_url is not None and not repo_url.startswith('https://github.com/'):
             self._validRepo = False
             raise ValueError("repo_url must be for GitHub for {orgname}".format(orgname=self.orgname))
+
+        urlpath = urlparse(repo_url).path[1:]
+        if urlpath.find("/") == -1:
+            self._validRepo = True
+            self.project_org = repo_url;
+            try:
+                g = Github(os.environ.get("GITHUB_KEY"))
+                org = g.get_organization(urlpath)
+                repo_url = org.get_repos()[0].url
+            except IndexError:
+                raise ValueError("invalid repo_url and the GitHub organization has no public repos either for {orgname}".format(orgname=self.orgname))
+            except UnknownObjectException:
+                raise ValueError("invalid repo_url and it's not a valid GitHub organization either for {orgname}".format(orgname=self.orgname))
 
         self._validRepo = True
         self.__repo_url = repo_url
