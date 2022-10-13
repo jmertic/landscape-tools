@@ -44,16 +44,16 @@ jobs:
 
     steps:
       - name: Checkout Landscape
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: landscape
       - name: Checkout landscape-tools
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: jmertic/landscape-tools
           path: landscape-tools
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
       - name: Install dependencies
@@ -65,12 +65,12 @@ jobs:
         run: |
           ../landscape-tools/landscapemembers.py
       - name: Save missing.csv file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: missing-members 
           path: ./landscape/missing.csv
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.PAT }}
           branch-suffix: timestamp
