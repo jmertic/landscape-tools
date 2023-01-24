@@ -69,19 +69,18 @@ jobs:
         with:
           name: missing-members 
           path: ./landscape/missing.csv
-      
       - name: Checkout landscapeapp
         uses: actions/checkout@v3
         with:
           repository: cncf/landscapeapp
-          path: landscapeapp2
+          path: landscapeapp
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
       - name: Cleanup YAML files
+        working-directory: ./landscapeapp
         run: |
-          cd landscapeapp2
           node tools/removePuppeteer
           npm install
           PROJECT_PATH=../landscape node tools/removeQuotes
