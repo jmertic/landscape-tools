@@ -16,7 +16,7 @@ import responses
 from landscape_tools.config import Config
 from landscape_tools.member import Member
 from landscape_tools.members import Members
-from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.lfxmembers import LFXMembers
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -367,7 +367,7 @@ class TestMembers(unittest.TestCase):
             members = Members(loadData=False)
             self.assertEqual(members.normalizeCompany(company["name"]),company["normalized"])
 
-class TestSFDCMembers(unittest.TestCase):
+class TestLFXMembers(unittest.TestCase):
 
     def testFind(self):
         member = Member()
@@ -377,7 +377,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers(loadData=False)
+        members = LFXMembers(loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website,member.membership))
@@ -392,7 +392,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers(loadData=False)
+        members = LFXMembers(loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
@@ -400,14 +400,14 @@ class TestSFDCMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadData(self):
-        members = SFDCMembers(loadData = False)
+        members = LFXMembers(loadData = False)
         responses.add(
             method=responses.GET,
             url=members.endpointURL.format(members.project),
             body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
             )
 
-        members = SFDCMembers()
+        members = LFXMembers()
         self.assertEqual(members.members[0].orgname,"ConsenSys AG")
         self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
         self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
@@ -423,14 +423,14 @@ class TestSFDCMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadDataDuplicates(self):
-        members = SFDCMembers(loadData = False)
+        members = LFXMembers(loadData = False)
         responses.add(
             url=members.endpointURL.format(members.project),
             method=responses.GET,
             body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
             )
 
-        members = SFDCMembers()
+        members = LFXMembers()
         self.assertEqual(len(members.members),2)
 
 

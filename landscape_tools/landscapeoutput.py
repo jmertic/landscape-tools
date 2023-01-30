@@ -123,7 +123,16 @@ class LandscapeOutput:
         return filename
 
     def _removeNulls(self,yamlout):
-        return re.sub('/(- \w+:) null/g', '$1', yamlout)
+        dump = re.sub('/(- \w+:) null/g', '$1', yamlout)
+        
+        return dump
+
+    def _str_presenter(self, dumper, data):
+        if '\n' in data:
+            return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+        if len(data.splitlines()) > 1:  # check for multiline string
+            return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='>')
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data)
 
     def updateLandscape(self):
         # now write it back
@@ -138,12 +147,13 @@ class LandscapeOutput:
             print("Couldn't find the membership category in landscape.yml to update - please check your config.yaml settings")
 
         landscapefileoutput = Path(self.landscapefile)
-        ryaml = ruamel.yaml.YAML()
+        ryaml = ruamel.yaml.YAML(typ='rt')
+        ryaml.Representer.add_representer(str,self._str_presenter)
         ryaml.indent(mapping=2, sequence=4, offset=2)
         ryaml.default_flow_style = False
         ryaml.allow_unicode = True
         ryaml.width = 160
-        ryaml.Dumper = ruamel.yaml.RoundTripDumper
+        ryaml.preserve_quotes = False
         ryaml.dump(self.landscape,landscapefileoutput, transform=self._removeNulls)
 
         print("Successfully added "+str(self.membersAdded)+" members and skipped "+str(self.membersErrors)+" members")

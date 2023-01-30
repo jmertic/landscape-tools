@@ -6,7 +6,7 @@
 # encoding=utf8
 
 from landscape_tools.config import Config
-from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.lfxmembers import LFXMembers
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -29,7 +29,7 @@ def main():
         config = Config("config.yaml")
 
     # load member data sources
-    sfdcmembers = SFDCMembers(project = config.project)
+    lfxmembers = LFXMembers(project = config.project)
     cbmembers = CrunchbaseMembers()
     lsmembers = LandscapeMembers()
 
@@ -43,8 +43,8 @@ def main():
     else:
         lflandscape.newLandscape()
 
-    # Iterate through the SFDCMembers and update the landscapeMembers
-    for member in sfdcmembers.members:
+    # Iterate through the LFXMembers and update the landscapeMembers
+    for member in lfxmembers.members:
         print("Processing "+member.orgname)
         for memberClass in lflandscape.landscapeMembers:
             landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
