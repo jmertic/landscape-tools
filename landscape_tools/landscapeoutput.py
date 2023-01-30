@@ -16,6 +16,8 @@ from pathlib import Path
 ## third party modules
 import ruamel.yaml
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 class LandscapeOutput:
 
@@ -112,7 +114,13 @@ class LandscapeOutput:
             filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
         
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
-        r = requests.get(logo, allow_redirects=True)
+        
+        session = requests.Session()
+        retry = Retry(connect=5, backoff_factor=0.5)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)        
+        r = session.get(logo, allow_redirects=True)
         with open(filenamepath, 'wb') as fp:
             # catch places where autocrop will reject the image
             if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
