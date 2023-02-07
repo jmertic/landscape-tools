@@ -121,11 +121,10 @@ class LandscapeOutput:
         session.mount('http://', adapter)
         session.mount('https://', adapter)        
         r = session.get(logo, allow_redirects=True)
+        # catch places where autocrop will reject the image
+        if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
+            return '';
         with open(filenamepath, 'wb') as fp:
-            # catch places where autocrop will reject the image
-            if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
-                return '';
-
             fp.write(r.content)
 
         return filename
