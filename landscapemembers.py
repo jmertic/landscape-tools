@@ -13,6 +13,7 @@ from landscape_tools.landscapeoutput import LandscapeOutput
 
 from datetime import datetime
 from argparse import ArgumentParser,FileType
+import os
 from os import path
 
 def main():
@@ -68,6 +69,7 @@ def main():
                 # Write out to missing.csv if it's missing key parameters
                 if not member.isValidLandscapeItem():
                     print("...Missing key attributes - skip")
+                    lflandscape.removeHostedLogo(member.logo)
                     lflandscape.writeMissing(
                         member.orgname,
                         member.logo,

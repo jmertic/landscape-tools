@@ -129,6 +129,10 @@ class LandscapeOutput:
 
         return filename
 
+    def removeHostedLogo(self,logo):
+        if logo and os.path.isfile(os.path.normpath(self.hostedLogosDir+"/"+logo)):
+            os.remove(os.path.normpath(self.hostedLogosDir+"/"+logo))
+
     def _removeNulls(self,yamlout):
         dump = re.sub('/(- \w+:) null/g', '$1', yamlout)
         
