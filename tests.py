@@ -836,5 +836,18 @@ landscape:
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')
 
+    def testRemoveHostedLogo(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False)
+            tmpfilename.write('')
+            tmpfilename.close()
+            landscape = LandscapeOutput()
+            landscape.hostedLogosDir = tempdir
+            landscape.removeHostedLogo(os.path.basename(tmpfilename.name))
+
+            self.assertFalse(os.path.exists(tmpfilename.name))
+
+
+
 if __name__ == '__main__':
     unittest.main()
