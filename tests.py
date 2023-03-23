@@ -836,6 +836,36 @@ landscape:
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')
 
+    @responses.activate
+    def testHostLogo404(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body='{"error": "not found"}', status=404,
+        )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','boom'),'https://someurl.com/boom.svg')
+
+    @responses.activate
+    def testHostLogo404FileExists(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body='{"error": "not found"}', status=404,
+        )
+        with tempfile.TemporaryDirectory() as tempdir:
+            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False,suffix='.svg')
+            tmpfilename.write('')
+            tmpfilename.close()
+            landscape = LandscapeOutput()
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg',os.path.basename(tmpfilename.name).removesuffix('.svg')),os.path.basename(tmpfilename.name))
+            
+            landscape.removeHostedLogo(os.path.basename(tmpfilename.name))
+
     def testRemoveHostedLogo(self):
         with tempfile.TemporaryDirectory() as tempdir:
             tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False)
