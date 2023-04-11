@@ -10,6 +10,7 @@ Current tools are:
 - [landscapemembers.py](landscapemembers.py) - Creates a new landscape.yml or updates an existing landscape.yml file with members populated. Leverages LF SFDC as the primary data source for members include, and uses Crunchbase and [other landscapes](https://github.com/cncf/landscapeapp/blob/master/landscapes.yml) as secondary data sources for data enrichment.
 - [makememberprojectlogos.sh](makememberprojectlogos.sh) - Creates uniform project/product logos for an organization where they don't have a specific logo to use.
 - [downloadcrunchbasedata.sh](downloadcrunchbasedata.sh) - Fetches the latest CSV dump of organizations from crunchbase
+- [buildimages.sh](buildimages.sh) - Creates images for all the projects of a given company, using the given image as base and adds the project name underneath.
 
 ## Installation
 
