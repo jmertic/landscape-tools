@@ -39,7 +39,11 @@ class LandscapeMembers(Members):
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
-            settingsYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content) 
+            try:
+                settingsYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content) 
+            except:
+                # skip if the yaml file cannot be loaded
+                continue
             # skip landscape if not well formed
             if 'global' not in settingsYaml or settingsYaml['global'] is None or 'membership' not in settingsYaml['global']:
                 continue
@@ -47,7 +51,10 @@ class LandscapeMembers(Members):
 
             # then load in members only
             response = requests.get(self.landscapeLandscapeYAML.format(repo=landscape['repo']))
-            landscapeYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
+            try:
+                landscapeYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
+            except:
+                continue
             for category in landscapeYaml['landscape']:
                 if membershipKey in category['name']:
                     for subcategory in category['subcategories']:

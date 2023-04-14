@@ -16,7 +16,7 @@ import responses
 from landscape_tools.config import Config
 from landscape_tools.member import Member
 from landscape_tools.members import Members
-from landscape_tools.sfdcmembers import SFDCMembers
+from landscape_tools.lfxmembers import LFXMembers
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -357,7 +357,7 @@ class TestMembers(unittest.TestCase):
             members = Members(loadData=False)
             self.assertEqual(members.normalizeCompany(company["name"]),company["normalized"])
 
-class TestSFDCMembers(unittest.TestCase):
+class TestLFXMembers(unittest.TestCase):
 
     def testFind(self):
         member = Member()
@@ -367,7 +367,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers(loadData=False)
+        members = LFXMembers(loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website,member.membership))
@@ -382,7 +382,7 @@ class TestSFDCMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = SFDCMembers(loadData=False)
+        members = LFXMembers(loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
@@ -390,14 +390,14 @@ class TestSFDCMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadData(self):
-        members = SFDCMembers(loadData = False)
+        members = LFXMembers(loadData = False)
         responses.add(
             method=responses.GET,
             url=members.endpointURL.format(members.project),
             body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
             )
 
-        members = SFDCMembers()
+        members = LFXMembers()
         self.assertEqual(members.members[0].orgname,"ConsenSys AG")
         self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
         self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
@@ -413,14 +413,14 @@ class TestSFDCMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadDataDuplicates(self):
-        members = SFDCMembers(loadData = False)
+        members = LFXMembers(loadData = False)
         responses.add(
             url=members.endpointURL.format(members.project),
             method=responses.GET,
             body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
             )
 
-        members = SFDCMembers()
+        members = LFXMembers()
         self.assertEqual(len(members.members),2)
 
 
@@ -485,6 +485,64 @@ landscape:
         self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
         self.assertEqual(members.members[1].orgname,"Blender Foundation")
 
+    @responses.activate
+    def testLoadDataInvalidYAML(self):
+        members = LandscapeMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://aswf.io
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        self.assertRaises(Exception,members.loadData())
+    
     @responses.activate
     def testLoadDataBadLandscape(self):
         members = LandscapeMembers(loadData = False)
@@ -767,6 +825,49 @@ landscape:
     def testHostLogoNotURL(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo('boom','dog'),'boom')
+
+    @responses.activate
+    def testHostLogo404(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body='{"error": "not found"}', status=404,
+        )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir: 
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','boom'),'https://someurl.com/boom.svg')
+
+    @responses.activate
+    def testHostLogo404FileExists(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body='{"error": "not found"}', status=404,
+        )
+        with tempfile.TemporaryDirectory() as tempdir:
+            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False,suffix='.svg')
+            tmpfilename.write('')
+            tmpfilename.close()
+            landscape = LandscapeOutput()
+            landscape.hostedLogosDir = tempdir
+            self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg',os.path.basename(tmpfilename.name).removesuffix('.svg')),os.path.basename(tmpfilename.name))
+            
+            landscape.removeHostedLogo(os.path.basename(tmpfilename.name))
+
+    def testRemoveHostedLogo(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False)
+            tmpfilename.write('')
+            tmpfilename.close()
+            landscape = LandscapeOutput()
+            landscape.hostedLogosDir = tempdir
+            landscape.removeHostedLogo(os.path.basename(tmpfilename.name))
+
+            self.assertFalse(os.path.exists(tmpfilename.name))
+
+
 
 if __name__ == '__main__':
     unittest.main()

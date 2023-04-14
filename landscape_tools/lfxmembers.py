@@ -12,7 +12,7 @@ from landscape_tools.members import Members
 from landscape_tools.member import Member
 
 
-class SFDCMembers(Members):
+class LFXMembers(Members):
 
     project = 'tlf' # The Linux Foundation
 
@@ -25,7 +25,7 @@ class SFDCMembers(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading SFDC Members data--")
+        print("--Loading LFX Members data--")
 
         with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()

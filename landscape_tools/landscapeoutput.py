@@ -16,6 +16,8 @@ from pathlib import Path
 ## third party modules
 import ruamel.yaml
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 class LandscapeOutput:
 
@@ -121,18 +123,43 @@ class LandscapeOutput:
             filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
         
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
-        r = requests.get(logo, allow_redirects=True)
+        
+        session = requests.Session()
+        retry = Retry(connect=5, backoff_factor=0.5)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)        
+        r = session.get(logo, allow_redirects=True)
+        if r.status_code != 200:
+            # failed to get image; if there is already an image there do nothing
+            # if it doesn't exist, return the logo URL given
+            if os.path.isfile(filenamepath):
+                return filename
+            else:
+                return logo
+        # catch places where autocrop will reject the image
+        if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
+            return '';
         with open(filenamepath, 'wb') as fp:
-            # catch places where autocrop will reject the image
-            if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
-                return '';
-
             fp.write(r.content)
 
         return filename
 
+    def removeHostedLogo(self,logo):
+        if logo and os.path.isfile(os.path.normpath(self.hostedLogosDir+"/"+logo)):
+            os.remove(os.path.normpath(self.hostedLogosDir+"/"+logo))
+
     def _removeNulls(self,yamlout):
-        return re.sub('/(- \w+:) null/g', '$1', yamlout)
+        dump = re.sub('/(- \w+:) null/g', '$1', yamlout)
+        
+        return dump
+
+    def _str_presenter(self, dumper, data):
+        if '\n' in data:
+            return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+        if len(data.splitlines()) > 1:  # check for multiline string
+            return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='>')
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data)
 
     def updateLandscape(self):
         # now write it back
@@ -147,12 +174,13 @@ class LandscapeOutput:
             print("Couldn't find the membership category in landscape.yml to update - please check your config.yaml settings")
 
         landscapefileoutput = Path(self.landscapefile)
-        ryaml = ruamel.yaml.YAML()
+        ryaml = ruamel.yaml.YAML(typ='rt')
+        ryaml.Representer.add_representer(str,self._str_presenter)
         ryaml.indent(mapping=2, sequence=4, offset=2)
         ryaml.default_flow_style = False
         ryaml.allow_unicode = True
         ryaml.width = 160
-        ryaml.Dumper = ruamel.yaml.RoundTripDumper
+        ryaml.preserve_quotes = False
         ryaml.dump(self.landscape,landscapefileoutput, transform=self._removeNulls)
 
         print("Successfully added "+str(self.membersAdded)+" members and skipped "+str(self.membersErrors)+" members")
