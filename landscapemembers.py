@@ -6,8 +6,8 @@
 # encoding=utf8
 
 from landscape_tools.config import Config
-from landscape_tools.sfdcmembers import SFDCMembers
-from landscape_tools.sfdcprojects import SFDCProjects
+from landscape_tools.lfxmembers import LFXMembers
+from landscape_tools.lfxprojects import LFXProjects
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -30,7 +30,7 @@ def main():
         config = Config("config.yaml")
 
     # load member data sources
-    sfdcmembers = SFDCMembers(project = config.project)
+    lfxmembers = LFXMembers(project = config.project)
     cbmembers = CrunchbaseMembers()
     lsmembers = LandscapeMembers()
 
@@ -44,8 +44,8 @@ def main():
     else:
         lflandscape.newLandscape()
 
-    # Iterate through the SFDCMembers and update the landscapeMembers
-    for member in sfdcmembers.members:
+    # Iterate through the LFXMembers and update the landscapeMembers
+    for member in lfxmembers.members:
         print("Processing "+member.orgname)
         for memberClass in lflandscape.landscapeMembers:
             landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
@@ -85,9 +85,9 @@ def main():
                     memberClass['items'].append(member.toLandscapeItemAttributes())
                 break
 
-    # Interate through SFDCProjects and update the landscapeMembers
-    sfdcprojects = SFDCProjects(project = config.project)
-    for project in sfdcprojects.members:
+    # Interate through LFXProjects and update the landscapeMembers
+    lfxprojects = LFXProjects(project = config.project)
+    for project in lfxprojects.members:
         print("Processing "+member.orgname)
 
 
