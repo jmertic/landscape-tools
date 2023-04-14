@@ -12,7 +12,7 @@ from landscape_tools.members import Members
 from landscape_tools.member import Member
 
 
-class SFDCProjects(Members):
+class LFXProjects(Members):
 
     project = 'tlf' # The Linux Foundation
     defaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
@@ -28,7 +28,7 @@ class SFDCProjects(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading SFDC Projects data--")
+        print("--Loading LFX Projects data--")
 
         with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()

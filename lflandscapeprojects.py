@@ -6,7 +6,7 @@
 # encoding=utf8
 
 from landscape_tools.config import Config
-from landscape_tools.sfdcprojects import SFDCProjects
+from landscape_tools.lfxprojects import LFXProjects
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -25,7 +25,7 @@ def main():
     startTime = datetime.now()
     
     projectSlug = 'tlf'
-    sfdcprojects = SFDCProjects(project = projectSlug)
+    lfxprojects = LFXProjects(project = projectSlug)
 
     lflandscape = LandscapeOutput()
     #lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
@@ -37,12 +37,12 @@ def main():
 
     # now pull the projects list and add entries for them
     projectsLandscape = {}
-    for project in sfdcprojects.members:
+    for project in lfxprojects.members:
         print("Processing {}...".format(project.orgname))
         if project.parent_slug not in projectsLandscape:
             projectsLandscape[project.parent_slug] = []
         if project.slug != projectSlug:
-            subprojects = SFDCProjects(project=project.slug)
+            subprojects = LFXProjects(project=project.slug)
             for subproject in subprojects.members:
                 print("- Processing {}...".format(subproject.orgname))
                 if subproject.parent_slug not in projectsLandscape:
@@ -73,7 +73,7 @@ def main():
         if section != 'tlf':
             subcategories.append({
                 'subcategory': None,
-                'name': sfdcprojects.findBySlug(section).orgname,
+                'name': lfxprojects.findBySlug(section).orgname,
                 'items': projectsLandscape[section]
                 })
 
