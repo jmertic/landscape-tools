@@ -43,7 +43,7 @@ class LFXMembers(Members):
                 except ValueError as e:
                     pass
                 try:
-                    member.membership = record['Membership']['Name']
+                    member.membership = self.__normalizeMembershipName(record['Membership']['Name'])
                 except ValueError as e:
                     pass
                 if 'Logo' in record:
@@ -74,3 +74,10 @@ class LFXMembers(Members):
 
         return members
 
+    def __normalizeMembershipName(self,name):
+        parts = name.split(" - ")
+        if len(parts) > 1:
+            parts2 = parts[1].split(" (")
+            return parts2[0]
+        
+        return name
