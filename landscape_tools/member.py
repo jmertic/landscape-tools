@@ -12,7 +12,8 @@ from urllib.parse import urlparse
 ## third party modules
 from url_normalize import url_normalize
 import validators
-from github import Github, GithubException, UnknownObjectException
+import requests
+#from github import Github, GithubException, UnknownObjectException
 #
 # Member object to ensure we have normalization on fields. Only required fields are defined; others can be added dynamically.
 #
@@ -42,25 +43,33 @@ class Member:
 
     @repo_url.setter
     def repo_url(self, repo_url):
-        if repo_url is not None and not repo_url.startswith('https://github.com/'):
-            self._validRepo = False
-            raise ValueError("repo_url must be for GitHub for {orgname}".format(orgname=self.orgname))
+        if repo_url is not None:
+            repo_url = repo_url.rstrip("/")
+            urlpath = urlparse(repo_url,scheme='http').path[1:]
 
-        urlpath = urlparse(repo_url).path[1:]
-        if urlpath.find("/") == -1:
+            if repo_url.startswith('https://github.com/'): 
+                if urlpath.find("/") == -1:
+                    self._validRepo = True
+                    with requests.get('https://api.github.com/orgs/{}/repos'.format(urlpath),headers={'Authorization': 'Bearer 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'}) as endpointResponse:
+                        if endpointResponse.status_code == requests.codes.ok:
+                            repoList = endpointResponse.json()
+                            if type(repoList) == list and len(repoList):
+                                print('...setting repo_url to https://github.com/{}/{}'.format(urlpath,repoList[0]['name']))
+                                self.__repo_url = 'https://github.com/{}/{}'.format(urlpath,repoList[0]['name'])
+                                self.project_org = repo_url;
+                        else:
+                            self._validRepo = False
+                            raise ValueError("invalid repo_url and the GitHub organization has no public repos either for {orgname}".format(orgname=self.orgname))
+                else:
+                    # clean up to ensure it's a valid github repo url
+                    x = urlparse(repo_url);
+                    parts = x.path.split("/");
+                    self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
+
+            else:
+                self.__repo_url = repo_url
+            
             self._validRepo = True
-            self.project_org = repo_url;
-            try:
-                g = Github(os.environ.get("GITHUB_KEY"))
-                org = g.get_organization(urlpath)
-                repo_url = org.get_repos()[0].url
-            except IndexError:
-                raise ValueError("invalid repo_url and the GitHub organization has no public repos either for {orgname}".format(orgname=self.orgname))
-            except UnknownObjectException:
-                raise ValueError("invalid repo_url and it's not a valid GitHub organization either for {orgname}".format(orgname=self.orgname))
-
-        self._validRepo = True
-        self.__repo_url = repo_url
 
     @property
     def crunchbase(self):
@@ -171,6 +180,8 @@ class Member:
                 returnentry['name'] = self.orgname + self.entrysuffix
             elif i == 'homepage_url':
                 returnentry['homepage_url'] = self.website
+            elif i == 'repo_url' and ( not self.repo_url or self.repo_url == ''):
+                continue
             elif i == 'twitter' and ( not self.twitter or self.twitter == ''):
                 continue
             elif hasattr(self,i):
