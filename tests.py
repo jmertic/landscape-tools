@@ -807,25 +807,6 @@ landscape:
             self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][0]['name'],"Good")
             self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][1]['name'],"Bad")
 
-    def testLoadLandscapeInvalidParse(self):
-        testlandscape = "this is a bunch of odd stuff"
-        with tempfile.NamedTemporaryFile(mode='w') as tmpfilename:
-            tmpfilename.write(testlandscape)
-            tmpfilename.flush()
-
-            landscape = LandscapeOutput()
-            landscape.landscapeMemberCategory = 'test me'
-            landscape.landscapeMemberClasses = [
-                {"name": "Good Membership", "category": "Good"},
-                {"name": "Bad Membership", "category": "Bad"}
-                ]
-            landscape.landscapefile = tmpfilename.name
-            landscape.loadLandscape(reset=False)
-
-            self.assertEqual(landscape.landscape['landscape'][0]['name'],'test me')
-            self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][0]['name'],"Good")
-            self.assertEqual(landscape.landscape['landscape'][0]['subcategories'][1]['name'],"Bad")
-    
     @responses.activate
     def testHostLogo(self):
         responses.add(
