@@ -43,30 +43,61 @@ def main():
             projectsLandscape[project.parent_slug] = []
         if project.slug != projectSlug:
             subprojects = LFXProjects(project=project.slug)
-            for subproject in subprojects.members:
-                print("- Processing {}...".format(subproject.orgname))
-                if subproject.parent_slug not in projectsLandscape:
-                    projectsLandscape[subproject.parent_slug] = []
-                if subproject.isValidLandscapeItem():
+            if len(subprojects.members) > 1:
+                print("- Loading Subprojects...")
+                for subproject in subprojects.members:
+                    print("- Processing {}...".format(subproject.orgname))
+                    if subproject.parent_slug not in projectsLandscape:
+                        projectsLandscape[subproject.parent_slug] = []
                     try:
                         subproject.logo = lflandscape.hostLogo(logo=subproject.logo,orgname=subproject.orgname)
                     except ValueError as e:
                         pass
-                    projectsLandscape[subproject.parent_slug].append(subproject.toLandscapeItemAttributes())
-            if project.isValidLandscapeItem():
+                    if subproject.isValidLandscapeItem():
+                        projectsLandscape[subproject.parent_slug].append(subproject.toLandscapeItemAttributes())
+                    else:
+                        print("...Missing key attributes - skip")
+                        lflandscape.removeHostedLogo(subproject.logo)
+                        lflandscape.writeMissing(
+                            subproject.orgname,
+                            subproject.logo,
+                            subproject.website,
+                            subproject.crunchbase
+                            )
+                print("- Adding main project...")
                 if project.slug not in projectsLandscape:
                     projectsLandscape[project.slug] = []
-                    try:
-                        project.logo = lflandscape.hostLogo(logo=project.logo,orgname=project.orgname)
-                    except ValueError as e:
-                        pass
-                projectsLandscape[project.slug].append(project.toLandscapeItemAttributes())
-        else:
-            try:
-                project.logo = lflandscape.hostLogo(logo=project.logo,orgname=project.orgname)
-            except ValueError as e:
-                pass
-            projectsLandscape[project.parent_slug].append(project.toLandscapeItemAttributes())
+                try:
+                    project.logo = lflandscape.hostLogo(logo=project.logo,orgname=project.orgname)
+                except ValueError as e:
+                    pass
+                if project.isValidLandscapeItem():
+                    projectsLandscape[project.slug].append(project.toLandscapeItemAttributes())
+                else:
+                    print("...Missing key attributes - skip")
+                    lflandscape.removeHostedLogo(project.logo)
+                    lflandscape.writeMissing(
+                        project.orgname,
+                        project.logo,
+                        project.website,
+                        project.crunchbase
+                        )
+            else:
+                try:
+                    project.logo = lflandscape.hostLogo(logo=project.logo,orgname=project.orgname)
+                except ValueError as e:
+                    pass
+                if project.isValidLandscapeItem():
+                    projectsLandscape[projectSlug].append(project.toLandscapeItemAttributes())
+                else:
+                    print("...Missing key attributes - skip")
+                    lflandscape.removeHostedLogo(project.logo)
+                    lflandscape.writeMissing(
+                        project.orgname,
+                        project.logo,
+                        project.website,
+                        project.crunchbase
+                        )
    
     subcategories = []
     for section in projectsLandscape:
@@ -77,13 +108,17 @@ def main():
                 'items': projectsLandscape[section]
                 })
 
-    fullLandscape = {
-        'landscape': [{
-            'category': None,
-            'name': 'Projects',
-            'subcategories': subcategories
-            }]
-        }
+    lflandscape.loadLandscape()
+    found = False
+    for x in lflandscape.landscape['landscape']:
+        if x['name'] == 'Projects':
+            x['subcategories'] = subcategories
+            found = True
+            continue
+
+    if not found:
+        print("Couldn't find the projects category in landscape.yml to update - please check your config.yaml settings")
+    
 
 
     def _removeNulls(yamlout):
@@ -97,8 +132,7 @@ def main():
     ryaml.allow_unicode = True
     ryaml.width = 160
     ryaml.Dumper = ruamel.yaml.RoundTripDumper
-    ryaml.dump(fullLandscape,landscapefileoutput, transform=_removeNulls)
-    
+    ryaml.dump(lflandscape.landscape,landscapefileoutput, transform=_removeNulls)
 
     #lflandscape.updateLandscape()
     print("This took "+str(datetime.now() - startTime)+" seconds")

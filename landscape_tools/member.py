@@ -45,6 +45,7 @@ class Member:
     def repo_url(self, repo_url):
         if repo_url is not None:
             repo_url = repo_url.rstrip("/")
+            repo_url = url_normalize(repo_url, default_scheme='https')
             urlpath = urlparse(repo_url,scheme='http').path[1:]
 
             if repo_url.startswith('https://github.com/'): 
@@ -171,6 +172,8 @@ class Member:
             'unnamed_organization',
             'organization',
             'joined',
+            'second_path',
+            'extra',
             'other_repo_url'
         ]
         returnentry = {'item': None}

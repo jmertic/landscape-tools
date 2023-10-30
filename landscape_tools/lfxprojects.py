@@ -37,6 +37,10 @@ class LFXProjects(Members):
                     continue
                 if record['Status'] != 'Active':
                     continue
+                if not record['DisplayOnWebsite']:
+                    continue
+                if record['TestRecord']:
+                    continue
 
                 member = Member()
                 try:
@@ -76,6 +80,11 @@ class LFXProjects(Members):
                 if 'Twitter' in record and record['Twitter'] != '':
                     try:
                         member.twitter = record['Twitter']
+                    except ValueError as e:
+                        pass
+                if 'IndustrySector' in record and record['IndustrySector'] != '':
+                    try:
+                        member.second_path = 'Industry / {}'.format(record['IndustrySector'])
                     except ValueError as e:
                         pass
                 self.members.append(member)
