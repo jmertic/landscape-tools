@@ -30,6 +30,7 @@ class LFXMembers(Members):
         with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()
             for record in memberList:
+                record['Website'] = '' if 'Website' not in record else record['Website']
                 if self.find(record['Name'],record['Website'],record['Membership']['Name']):
                     continue
 
