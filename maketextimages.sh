@@ -1,16 +1,19 @@
 #!/bin/bash
 #
 
-while getopts c:l: flag
+newonly="n"
+
+while getopts c:l:n flag
 do
     case "${flag}" in
         c) crunchbase=${OPTARG};;
-        l) baselogo=${OPTARG};;
+        n) newonly="y"
     esac
 done
 
 IFS=$'\n'
-items=( $(ls -ag hosted_logos | grep "9406 Apr 11 16:48") )
+items=( $(yq '.landscape[] | select(.name != "LF Energy Member") | .subcategories[].items[] | select(.crunchbase == "*/'${crunchbase}'*") .name' landscape.yml) )
+IFS=$'\n'
 
 for item in "${!items[@]}"
 do
@@ -21,6 +24,8 @@ do
   logoname=${logofile/$replacetext/}
   logofile="hosted_logos/$logofile"
   echo -n "Making logo for $logoname..."
+  echo "<svg><text>$logoname</text></svg>" > text.svg
+  inkscape text.svg --export-text-to-path --export-plain-svg --export-filename=$logofile --export-area-drawing
   echo "<svg><text>$logoname</text></svg>" > text.svg
   inkscape text.svg --export-text-to-path --export-plain-svg --export-filename=$logofile --export-area-drawing
   echo "DONE"
