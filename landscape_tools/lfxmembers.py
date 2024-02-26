@@ -16,7 +16,7 @@ class LFXMembers(Members):
 
     project = 'tlf' # The Linux Foundation
 
-    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active' 
+    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active,At Risk' 
 
     def __init__(self, project = None, loadData = True):
 
