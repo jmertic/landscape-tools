@@ -7,6 +7,7 @@
 
 from landscape_tools.config import Config
 from landscape_tools.lfxmembers import LFXMembers
+from landscape_tools.lfxprojects import LFXProjects
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
@@ -85,6 +86,12 @@ def main():
                         member.entrysuffix = config.memberSuffix
                     memberClass['items'].append(member.toLandscapeItemAttributes())
                 break
+
+    # Interate through LFXProjects and update the landscapeMembers
+    lfxprojects = LFXProjects(project = config.project)
+    for project in lfxprojects.members:
+        print("Processing "+member.orgname)
+
 
     lflandscape.updateLandscape()
     print("This took "+str(datetime.now() - startTime)+" seconds")

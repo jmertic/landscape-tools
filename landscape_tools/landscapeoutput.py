@@ -40,6 +40,13 @@ class LandscapeOutput:
     membersUpdated = 0
     membersErrors = 0
 
+    landscapeProjectTaxonmony = [
+        {"name": "Projects", "subcategories": [
+            {"name": "All"}
+        ]}
+    ]
+    landscapeProjectsReplace = True
+
     def __init__(self, loadLandscape = False):
         if loadLandscape:
             self.loadLandscape()
@@ -65,9 +72,11 @@ class LandscapeOutput:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
 
+        
+
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
-            self.landscape = ruamel.yaml.YAML(typ='unsafe', pure=True).load(fileobject)
+            self.landscape = ruamel.yaml.YAML().load(fileobject)
             if not self.landscape or not self.landscape['landscape']:
                 self.newLandscape()
             else:
@@ -108,13 +117,13 @@ class LandscapeOutput:
         filename = re.sub(r'(?u)[^-\w.]', '', filename)
         filename = filename.lower()
         filename = unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg" 
-        
+        filename = filename.lower()
+       
         ## create a random file name in case somehow the generated one doesn't work
         if filename == ".svg":
             filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
         
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
-        
         session = requests.Session()
         retry = Retry(connect=5, backoff_factor=0.5)
         adapter = HTTPAdapter(max_retries=retry)
@@ -127,7 +136,7 @@ class LandscapeOutput:
             if os.path.isfile(filenamepath):
                 return filename
             else:
-                return logo
+                return ''
         # catch places where autocrop will reject the image
         if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
             return '';

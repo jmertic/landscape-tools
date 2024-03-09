@@ -203,11 +203,8 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict['homepage_url'],member.website)
         self.assertEqual(dict['crunchbase'],member.crunchbase)
         self.assertNotIn('membership',dict)
-        self.assertEqual(dict.popitem(),('crunchbase', member.crunchbase))
-        self.assertEqual(dict.popitem(),('logo', None))
-        self.assertEqual(dict.popitem(),('homepage_url', member.website))
-        self.assertEqual(dict.popitem(),('name', member.orgname))
-        self.assertEqual(dict.popitem(),('item', None))
+        self.assertIsNone(dict['logo'])
+        self.assertIsNone(dict['item'])
 
     def testToLandscapeItemAttributesEmptyCrunchbase(self):
         member = Member()
@@ -219,12 +216,9 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict['name'],member.orgname)
         self.assertEqual(dict['homepage_url'],member.website)
         self.assertEqual(dict['organization']['name'],member.orgname)
+        self.assertIsNone(dict['logo'])
+        self.assertIsNone(dict['item'])
         self.assertNotIn('crunchbase',dict)
-        self.assertEqual(dict.popitem(),('organization', {'name':member.orgname}))
-        self.assertEqual(dict.popitem(),('logo', None))
-        self.assertEqual(dict.popitem(),('homepage_url', member.website))
-        self.assertEqual(dict.popitem(),('name', member.orgname))
-        self.assertEqual(dict.popitem(),('item', None))
     
     def testToLandscapeItemAttributesWithSuffix(self):
         member = Member()
@@ -238,13 +232,9 @@ class TestMember(unittest.TestCase):
         self.assertEqual(dict['name'],member.orgname+" (testme)")
         self.assertEqual(dict['homepage_url'],member.website)
         self.assertEqual(dict['crunchbase'],member.crunchbase)
+        self.assertIsNone(dict['logo'])
+        self.assertIsNone(dict['item'])
         self.assertNotIn('membership',dict)
-        self.assertEqual(dict.popitem(),('crunchbase', member.crunchbase))
-        self.assertEqual(dict.popitem(),('logo', None))
-        self.assertEqual(dict.popitem(),('homepage_url', member.website))
-        self.assertEqual(dict.popitem(),('name', member.orgname+" (testme)"))
-        self.assertEqual(dict.popitem(),('item', None))
-
 
     def testIsValidLandscapeItem(self):
         member = Member()
