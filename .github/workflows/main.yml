@@ -19,9 +19,14 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - uses: actions/checkout@v4
+    - name: Harden Runner
+      uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: '3.x'
     - name: Install dependencies
@@ -33,7 +38,7 @@ jobs:
       run: |
         coverage run tests.py -b
     - name: Get Coverage
-      uses: andraghetti/coverage@v3.2
+      uses: andraghetti/coverage@591fb19695db7c6ac22744e35b09093e7c80387e # v3.2
       with:
         coverageFile: coverage.xml
         token: ${{ secrets.GH_TOKEN }}
