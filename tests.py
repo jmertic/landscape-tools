@@ -25,7 +25,7 @@ class TestConfig(unittest.TestCase):
 
     def testLoadConfig(self):
         testconfigfilecontents = """
-landscapeName: aswf
+hostedLogosDir: 'hosted_logos'
 landscapeMemberClasses:
    - name: Premier Membership
      category: Premier
@@ -47,9 +47,31 @@ memberSuffix: " (help)"
         self.assertEqual(config.landscapeMemberCategory,"ASWF Member Company")
         self.assertEqual(config.landscapefile,"landscape.yml")
         self.assertEqual(config.missingcsvfile,"missing.csv")
-        self.assertEqual(config.landscapeName,"aswf")
         self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
         self.assertEqual(config.memberSuffix," (help)")
+
+        os.unlink(tmpfilename.name)
+
+    def testLoadConfigDefaults(self):
+        testconfigfilecontents = """
+project: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.landscapeMemberCategory,'Members')
+        self.assertEqual(config.landscapeMemberClasses,[
+            {"name": "Premier Membership", "category": "Premier"},
+            {"name": "General Membership", "category": "General"},
+        ])
+        self.assertEqual(config.landscapefile,'landscape.yml')
+        self.assertEqual(config.missingcsvfile,'missing.csv')
+        self.assertEqual(config.hostedLogosDir,'hosted_logos')
+        self.assertIsNone(config.memberSuffix)
+        self.assertEqual(config.project,"a09410000182dD2AAI")
 
         os.unlink(tmpfilename.name)
 

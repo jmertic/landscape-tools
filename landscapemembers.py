@@ -26,6 +26,8 @@ def main():
     args = parser.parse_args()
     if args.configfile:
         config = Config(args.configfile)
+    elif os.path.isfile("config.yml"):
+        config = Config("config.yml")
     else:
         config = Config("config.yaml")
 
@@ -39,6 +41,7 @@ def main():
     lflandscape.landscapeMemberClasses = config.landscapeMemberClasses
     lflandscape.landscapefile = config.landscapefile
     lflandscape.missingcsvfile = config.missingcsvfile
+    lflandscape.hostedLogosDir = config.hostedLogosDir
     if path.exists(config.landscapefile):
         lflandscape.loadLandscape(reset=True)
     else:

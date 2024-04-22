@@ -57,11 +57,6 @@ class LFXMembers(Members):
                         member.crunchbase = record['CrunchBaseURL']
                     except ValueError as e:
                         pass
-                if 'Twitter' in record and record['Twitter'] != '':
-                    try:
-                        member.twitter = record['Twitter']
-                    except ValueError as e:
-                        pass
                 self.members.append(member)
 
     def find(self, org, website, membership):
