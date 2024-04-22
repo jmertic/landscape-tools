@@ -75,6 +75,20 @@ project: a09410000182dD2AAI # Academy Software Foundation
 
         os.unlink(tmpfilename.name)
 
+    def testLoadConfigDefaultsNotSet(self):
+        testconfigfilecontents = """
+projectewew: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with self.assertRaises(SystemExit):
+            config = Config(tmpfilename.name)
+
+        os.unlink(tmpfilename.name)
+
+
 class TestMember(unittest.TestCase):
 
     def testSetCrunchbaseValid(self):
