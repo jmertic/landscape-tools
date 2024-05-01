@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/github/license/jmertic/landscape-tools)](LICENSE)
 [![CI](https://github.com/jmertic/landscape-tools/workflows/CI/badge.svg)](https://github.com/jmertic/landscape-tools/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/jmertic/landscape-tools/graph/badge.svg?token=A05TDQO69V)](https://codecov.io/gh/jmertic/landscape-tools)
 
 This project contains some tools for making it easier to build and maintain a [landscape](https://github.com/cncf/landscapeapp).
 
