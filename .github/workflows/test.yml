@@ -5,6 +5,7 @@ name: CI
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request_target:
@@ -37,8 +38,7 @@ jobs:
     - name: Run tests
       run: |
         coverage run tests.py -b
-    - name: Get Coverage
-      uses: andraghetti/coverage@591fb19695db7c6ac22744e35b09093e7c80387e # v3.2
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
       with:
-        coverageFile: coverage.xml
-        token: ${{ secrets.GH_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN }}
