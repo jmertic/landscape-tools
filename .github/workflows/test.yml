@@ -34,7 +34,7 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-        pip install --require-hashes -r requirements.txt
+        pip install --no-deps --require-hashes -r requirements.txt
     - name: Run tests
       run: |
         coverage run tests.py -b
