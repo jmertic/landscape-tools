@@ -12,6 +12,9 @@ on:
     branches: [ main ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: read
+
 jobs:
   # This workflow contains a single job called "build"
   build:
@@ -40,6 +43,6 @@ jobs:
         coverage run tests.py -b
         coverage xml
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.0.1
+      uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # v4.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
