@@ -67,7 +67,7 @@ class LandscapeOutput:
 
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
-            self.landscape = ruamel.yaml.YAML(typ='unsafe', pure=True).load(fileobject)
+            self.landscape = ruamel.yaml.YAML().load(fileobject)
             if not self.landscape or not self.landscape['landscape']:
                 self.newLandscape()
             else:
@@ -141,7 +141,7 @@ class LandscapeOutput:
             os.remove(os.path.normpath(self.hostedLogosDir+"/"+logo))
 
     def _removeNulls(self,yamlout):
-        dump = re.sub('/(- \w+:) null/g', '$1', yamlout)
+        dump = re.sub(r'/(- \w+:) null/g', '$1', yamlout)
         
         return dump
 

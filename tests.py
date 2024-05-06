@@ -25,7 +25,7 @@ class TestConfig(unittest.TestCase):
 
     def testLoadConfig(self):
         testconfigfilecontents = """
-landscapeName: aswf
+hostedLogosDir: 'hosted_logos'
 landscapeMemberClasses:
    - name: Premier Membership
      category: Premier
@@ -47,11 +47,47 @@ memberSuffix: " (help)"
         self.assertEqual(config.landscapeMemberCategory,"ASWF Member Company")
         self.assertEqual(config.landscapefile,"landscape.yml")
         self.assertEqual(config.missingcsvfile,"missing.csv")
-        self.assertEqual(config.landscapeName,"aswf")
         self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
         self.assertEqual(config.memberSuffix," (help)")
 
         os.unlink(tmpfilename.name)
+
+    def testLoadConfigDefaults(self):
+        testconfigfilecontents = """
+project: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.landscapeMemberCategory,'Members')
+        self.assertEqual(config.landscapeMemberClasses,[
+            {"name": "Premier Membership", "category": "Premier"},
+            {"name": "General Membership", "category": "General"},
+        ])
+        self.assertEqual(config.landscapefile,'landscape.yml')
+        self.assertEqual(config.missingcsvfile,'missing.csv')
+        self.assertEqual(config.hostedLogosDir,'hosted_logos')
+        self.assertIsNone(config.memberSuffix)
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+
+        os.unlink(tmpfilename.name)
+
+    def testLoadConfigDefaultsNotSet(self):
+        testconfigfilecontents = """
+projectewew: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with self.assertRaises(SystemExit):
+            config = Config(tmpfilename.name)
+
+        os.unlink(tmpfilename.name)
+
 
 class TestMember(unittest.TestCase):
 
@@ -466,6 +502,30 @@ class TestLFXMembers(unittest.TestCase):
         self.assertEqual(members.members[1].membership,"Premier Membership")
         self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
         self.assertIsNone(members.members[1].twitter)
+
+    @responses.activate
+    def testLoadDataMissingWebsite(self):
+        members = LFXMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"LF Energy - Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":""},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = LFXMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertIsNone(members.members[0].website)
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
     @responses.activate
     def testLoadDataDuplicates(self):
         members = LFXMembers(loadData = False)
