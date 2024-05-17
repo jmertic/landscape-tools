@@ -116,7 +116,7 @@ class LandscapeOutput:
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
         
         session = requests.Session()
-        retry = Retry(connect=5, backoff_factor=0.5)
+        retry = Retry(backoff_factor=0.5)
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
         session.mount('https://', adapter)        
