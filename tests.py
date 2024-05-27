@@ -12,6 +12,8 @@ from unittest import mock
 import tempfile
 import os
 import responses
+from responses.registries import OrderedRegistry
+import requests
 
 from landscape_tools.config import Config
 from landscape_tools.member import Member
@@ -933,6 +935,24 @@ landscape:
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
     
+    @responses.activate(registry=OrderedRegistry)
+    def testHostLogoRetriesOnChunkedEncodingErrorException(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=requests.exceptions.ChunkedEncodingError("Connection broken: IncompleteRead(55849 bytes read, 19919 more expected)")
+        )
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data <text /> dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir:
+            landscape.hostedLogosDir = tempdir
+            landscape.hostLogo('https://someurl.com/boom.svg','privée')
+
     def testHostLogoLogoisNone(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo(None,'dog'),None)
