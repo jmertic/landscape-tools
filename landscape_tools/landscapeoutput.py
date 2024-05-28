@@ -120,7 +120,12 @@ class LandscapeOutput:
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
         session.mount('https://', adapter)        
-        r = session.get(logo, allow_redirects=True)
+        while True:
+            try:
+                r = session.get(logo, allow_redirects=True)
+                break
+            except requests.exceptions.ChunkedEncodingError:
+                pass
         if r.status_code != 200:
             # failed to get image; if there is already an image there do nothing
             # if it doesn't exist, return the logo URL given
