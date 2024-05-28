@@ -54,6 +54,23 @@ memberSuffix: " (help)"
 
         os.unlink(tmpfilename.name)
 
+    def testLoadConfigMissingCsvFileLandscapeFile(self):
+        testconfigfilecontents = """
+project: a09410000182dD2AAI # Academy Software Foundation
+landscapefile: foo.yml
+missingcsvfile: foo.csv
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+        self.assertEqual(config.landscapefile,"foo.yml")
+        self.assertEqual(config.missingcsvfile,"foo.csv")
+
+        os.unlink(tmpfilename.name)
     def testLoadConfigDefaults(self):
         testconfigfilecontents = """
 project: a09410000182dD2AAI # Academy Software Foundation
@@ -89,7 +106,6 @@ projectewew: a09410000182dD2AAI # Academy Software Foundation
             config = Config(tmpfilename.name)
 
         os.unlink(tmpfilename.name)
-
 
 class TestMember(unittest.TestCase):
 
@@ -338,6 +354,34 @@ class TestMember(unittest.TestCase):
         self.assertIsNone(member.stock_ticker)
         self.assertFalse(hasattr(member,'organization'))
 
+    def testOverlayOnlyKeys(self):
+        membertooverlay = Member()
+        membertooverlay.orgname = 'test'
+        membertooverlay.homepage_url = 'https://foo.com'
+        membertooverlay.logo = 'gold.svg'
+        membertooverlay.membership = 'Gold'
+        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        membertooverlay.organization = {'name':'foo'} 
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.org'
+        member.logo = 'silver.svg'
+        member.membership = 'Silver'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        member.twitter = 'https://twitter.com/mytwitter'
+        member.stock_ticker = None
+
+        membertooverlay.overlay(member,['website'])
+
+        self.assertEqual(member.orgname,'test')
+        self.assertEqual(member.website,'https://foo.org/')
+        self.assertEqual(member.logo,'silver.svg')
+        self.assertEqual(member.membership,'Silver')
+        self.assertEqual(member.crunchbase, 'https://www.crunchbase.com/organization/visual-effects-society')
+        self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
+        self.assertIsNone(member.stock_ticker)
+        self.assertFalse(hasattr(member,'organization'))
 
 class TestMembers(unittest.TestCase):
 
@@ -601,6 +645,65 @@ landscape:
         members.loadData()
         self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
         self.assertEqual(members.members[1].orgname,"Blender Foundation")
+    
+    @responses.activate
+    def testLoadDataSkipLandscape(self):
+        members = LandscapeMembers(loadData = False)
+        members.skipLandscapes = ['aswf']
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        members.loadData()
+        self.assertEqual(members.members,[])
 
     @responses.activate
     def testLoadDataInvalidYAML(self):
