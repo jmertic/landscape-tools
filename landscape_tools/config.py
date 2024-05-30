@@ -14,9 +14,15 @@ import ruamel.yaml
 
 class Config:
 
-    project = 'tlf' # The Linux Foundation
+    project = ''
+    landscapeMemberCategory = 'Members'
+    landscapeMemberClasses = [
+        {"name": "Premier Membership", "category": "Premier"},
+        {"name": "General Membership", "category": "General"},
+    ]
     landscapefile = 'landscape.yml'
     missingcsvfile = 'missing.csv'
+    hostedLogosDir = 'hosted_logos'
     memberSuffix = None
 
     def __init__(self, config_file):
@@ -29,6 +35,8 @@ class Config:
 
             if 'project' in data_loaded:
                 self.project = data_loaded['project']
+            else:
+                sys.exit("'project' not defined in config file")
             if 'landscapeMemberCategory' in data_loaded:
                 self.landscapeMemberCategory = data_loaded['landscapeMemberCategory']
             if 'landscapeMemberClasses' in data_loaded:
@@ -37,7 +45,7 @@ class Config:
                 self.landscapefile = data_loaded['landscapefile']
             if 'missingcsvfile' in data_loaded:
                 self.missingcsvfile = data_loaded['missingcsvfile']
-            if 'landscapeName' in data_loaded:
-                self.landscapeName = data_loaded['landscapeName']
             if 'memberSuffix' in data_loaded:
                 self.memberSuffix = data_loaded['memberSuffix']
+            if 'hostedLogosDir' in data_loaded:
+                self.hostedLogosDir = data_loaded['hostedLogosDir']

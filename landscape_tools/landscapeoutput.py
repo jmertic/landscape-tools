@@ -125,11 +125,16 @@ class LandscapeOutput:
         
         filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
         session = requests.Session()
-        retry = Retry(connect=5, backoff_factor=0.5)
+        retry = Retry(backoff_factor=0.5)
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
         session.mount('https://', adapter)        
-        r = session.get(logo, allow_redirects=True)
+        while True:
+            try:
+                r = session.get(logo, allow_redirects=True)
+                break
+            except requests.exceptions.ChunkedEncodingError:
+                pass
         if r.status_code != 200:
             # failed to get image; if there is already an image there do nothing
             # if it doesn't exist, return the logo URL given
@@ -150,7 +155,7 @@ class LandscapeOutput:
             os.remove(os.path.normpath(self.hostedLogosDir+"/"+logo))
 
     def _removeNulls(self,yamlout):
-        dump = re.sub('/(- \w+:) null/g', '$1', yamlout)
+        dump = re.sub(r'/(- \w+:) null/g', '$1', yamlout)
         
         return dump
 

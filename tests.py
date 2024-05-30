@@ -12,6 +12,8 @@ from unittest import mock
 import tempfile
 import os
 import responses
+from responses.registries import OrderedRegistry
+import requests
 
 from landscape_tools.config import Config
 from landscape_tools.member import Member
@@ -25,7 +27,7 @@ class TestConfig(unittest.TestCase):
 
     def testLoadConfig(self):
         testconfigfilecontents = """
-landscapeName: aswf
+hostedLogosDir: 'hosted_logos'
 landscapeMemberClasses:
    - name: Premier Membership
      category: Premier
@@ -47,9 +49,61 @@ memberSuffix: " (help)"
         self.assertEqual(config.landscapeMemberCategory,"ASWF Member Company")
         self.assertEqual(config.landscapefile,"landscape.yml")
         self.assertEqual(config.missingcsvfile,"missing.csv")
-        self.assertEqual(config.landscapeName,"aswf")
         self.assertEqual(config.landscapeMemberClasses[0]['name'],"Premier Membership")
         self.assertEqual(config.memberSuffix," (help)")
+
+        os.unlink(tmpfilename.name)
+
+    def testLoadConfigMissingCsvFileLandscapeFile(self):
+        testconfigfilecontents = """
+project: a09410000182dD2AAI # Academy Software Foundation
+landscapefile: foo.yml
+missingcsvfile: foo.csv
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+        self.assertEqual(config.landscapefile,"foo.yml")
+        self.assertEqual(config.missingcsvfile,"foo.csv")
+
+        os.unlink(tmpfilename.name)
+    def testLoadConfigDefaults(self):
+        testconfigfilecontents = """
+project: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        config = Config(tmpfilename.name)
+
+        self.assertEqual(config.landscapeMemberCategory,'Members')
+        self.assertEqual(config.landscapeMemberClasses,[
+            {"name": "Premier Membership", "category": "Premier"},
+            {"name": "General Membership", "category": "General"},
+        ])
+        self.assertEqual(config.landscapefile,'landscape.yml')
+        self.assertEqual(config.missingcsvfile,'missing.csv')
+        self.assertEqual(config.hostedLogosDir,'hosted_logos')
+        self.assertIsNone(config.memberSuffix)
+        self.assertEqual(config.project,"a09410000182dD2AAI")
+
+        os.unlink(tmpfilename.name)
+
+    def testLoadConfigDefaultsNotSet(self):
+        testconfigfilecontents = """
+projectewew: a09410000182dD2AAI # Academy Software Foundation
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with self.assertRaises(SystemExit):
+            config = Config(tmpfilename.name)
 
         os.unlink(tmpfilename.name)
 
@@ -290,6 +344,34 @@ class TestMember(unittest.TestCase):
         self.assertIsNone(member.stock_ticker)
         self.assertFalse(hasattr(member,'organization'))
 
+    def testOverlayOnlyKeys(self):
+        membertooverlay = Member()
+        membertooverlay.orgname = 'test'
+        membertooverlay.homepage_url = 'https://foo.com'
+        membertooverlay.logo = 'gold.svg'
+        membertooverlay.membership = 'Gold'
+        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        membertooverlay.organization = {'name':'foo'} 
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.org'
+        member.logo = 'silver.svg'
+        member.membership = 'Silver'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        member.twitter = 'https://twitter.com/mytwitter'
+        member.stock_ticker = None
+
+        membertooverlay.overlay(member,['website'])
+
+        self.assertEqual(member.orgname,'test')
+        self.assertEqual(member.website,'https://foo.org/')
+        self.assertEqual(member.logo,'silver.svg')
+        self.assertEqual(member.membership,'Silver')
+        self.assertEqual(member.crunchbase, 'https://www.crunchbase.com/organization/visual-effects-society')
+        self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
+        self.assertIsNone(member.stock_ticker)
+        self.assertFalse(hasattr(member,'organization'))
 
 class TestMembers(unittest.TestCase):
 
@@ -412,6 +494,75 @@ class TestLFXMembers(unittest.TestCase):
         self.assertIsNone(members.members[1].twitter)
 
     @responses.activate
+    def testLoadDataNormalizeMembershipName(self):
+        members = LFXMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"LF Energy - Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = LFXMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertEqual(members.members[0].website,"https://consensys.net/")
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
+    @responses.activate
+    def testLoadDataNormalizeMembershipName2(self):
+        members = LFXMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"LF Energy - Premier Membership ( 10000 - 20000 )","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = LFXMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertEqual(members.members[0].website,"https://consensys.net/")
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
+    @responses.activate
+    def testLoadDataMissingWebsite(self):
+        members = LFXMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"LF Energy - Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":""},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = LFXMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Premier Membership")
+        self.assertIsNone(members.members[0].website)
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+
+    @responses.activate
     def testLoadDataDuplicates(self):
         members = LFXMembers(loadData = False)
         responses.add(
@@ -484,6 +635,65 @@ landscape:
         members.loadData()
         self.assertEqual(members.members[0].orgname,"Academy of Motion Picture Arts and Sciences")
         self.assertEqual(members.members[1].orgname,"Blender Foundation")
+    
+    @responses.activate
+    def testLoadDataSkipLandscape(self):
+        members = LandscapeMembers(loadData = False)
+        members.skipLandscapes = ['aswf']
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeListYAML,
+            body="""
+landscapes:
+  # name: how we name a landscape project, used on a build server for logs and settings
+  # repo: a github repo for a specific landscape
+  # netlify: full | skip - do we build it on a netlify build or not
+  # hook: - id for a build hook, so it will be triggered after a master build
+  - landscape:
+    name: aswf
+    repo: AcademySoftwareFoundation/aswf-landscape
+    hook: 5d5c7ca6dc2c51cf02381f63
+    required: true
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeSettingsYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+global:
+  membership: ASWF Members
+"""
+            )
+        responses.add(
+            method=responses.GET,
+            url=members.landscapeLandscapeYAML.format(repo="AcademySoftwareFoundation/aswf-landscape"),
+            body="""
+landscape:
+  - category:
+    name: ASWF Members
+    subcategories:
+      - subcategory:
+        name: Premier
+        items:
+          - item:
+            name: Academy of Motion Picture Arts and Sciences
+            homepage_url: https://oscars.org/
+            logo: academy_of_motion_picture_arts_and_sciences.svg
+            twitter: https://twitter.com/TheAcademy
+            crunchbase: https://www.crunchbase.com/organization/the-academy-of-motion-picture-arts-and-sciences
+      - subcategory:
+        name: Associate
+        items:
+          - item:
+            name: Blender Foundation
+            homepage_url: https://blender.org/
+            logo: blender_foundation.svg
+            twitter: https://twitter.com/Blender_Cloud
+            crunchbase: https://www.crunchbase.com/organization/blender-org
+"""
+                )
+        members.loadData()
+        self.assertEqual(members.members,[])
 
     @responses.activate
     def testLoadDataInvalidYAML(self):
@@ -818,6 +1028,24 @@ landscape:
             landscape.hostedLogosDir = tempdir
             self.assertEqual(landscape.hostLogo('https://someurl.com/boom.svg','privée'),'')
     
+    @responses.activate(registry=OrderedRegistry)
+    def testHostLogoRetriesOnChunkedEncodingErrorException(self):
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=requests.exceptions.ChunkedEncodingError("Connection broken: IncompleteRead(55849 bytes read, 19919 more expected)")
+        )
+        responses.add(
+            method=responses.GET,
+            url='https://someurl.com/boom.svg',
+            body=b'this is image data <text /> dfdfdf'
+            )
+
+        landscape = LandscapeOutput()
+        with tempfile.TemporaryDirectory() as tempdir:
+            landscape.hostedLogosDir = tempdir
+            landscape.hostLogo('https://someurl.com/boom.svg','privée')
+
     def testHostLogoLogoisNone(self):
         landscape = LandscapeOutput()
         self.assertEqual(landscape.hostLogo(None,'dog'),None)

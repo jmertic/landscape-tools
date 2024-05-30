@@ -16,7 +16,7 @@ class LFXMembers(Members):
 
     project = 'tlf' # The Linux Foundation
 
-    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name' 
+    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active,At Risk' 
 
     def __init__(self, project = None, loadData = True):
 
@@ -30,6 +30,7 @@ class LFXMembers(Members):
         with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()
             for record in memberList:
+                record['Website'] = '' if 'Website' not in record else record['Website']
                 if self.find(record['Name'],record['Website'],record['Membership']['Name']):
                     continue
 
@@ -43,7 +44,7 @@ class LFXMembers(Members):
                 except ValueError as e:
                     pass
                 try:
-                    member.membership = record['Membership']['Name']
+                    member.membership = self.__normalizeMembershipName(record['Membership']['Name'])
                 except ValueError as e:
                     pass
                 if 'Logo' in record:
@@ -74,3 +75,10 @@ class LFXMembers(Members):
 
         return members
 
+    def __normalizeMembershipName(self,name):
+        parts = name.split(" - ")
+        if len(parts) > 1:
+            parts2 = parts[1].split(" (")
+            return parts2[0]
+        
+        return name

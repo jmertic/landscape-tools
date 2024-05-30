@@ -29,7 +29,7 @@ class LandscapeMembers(Members):
         print("--Loading other landscape members data--")
 
         response = requests.get(self.landscapeListYAML)
-        landscapeList = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
+        landscapeList = ruamel.yaml.YAML().load(response.content)
 
         for landscape in landscapeList['landscapes']:
             if landscape['name'] in self.skipLandscapes:
@@ -40,7 +40,7 @@ class LandscapeMembers(Members):
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
             try:
-                settingsYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content) 
+                settingsYaml = ruamel.yaml.YAML().load(response.content) 
             except:
                 # skip if the yaml file cannot be loaded
                 continue
@@ -52,7 +52,7 @@ class LandscapeMembers(Members):
             # then load in members only
             response = requests.get(self.landscapeLandscapeYAML.format(repo=landscape['repo']))
             try:
-                landscapeYaml = ruamel.yaml.YAML(typ='unsafe', pure=True).load(response.content)
+                landscapeYaml = ruamel.yaml.YAML().load(response.content)
             except:
                 continue
             for category in landscapeYaml['landscape']:
