@@ -25,7 +25,7 @@ class Config:
     hostedLogosDir = 'hosted_logos'
     memberSuffix = None
 
-    def __init__(self, config_file):
+    def __init__(self, config_file = ''):
         if config_file != '' and os.path.isfile(config_file):
             try:
                 with open(config_file, 'r') as stream:

@@ -7,6 +7,7 @@
 
 # third party modules
 import requests
+import requests_cache
 
 from landscape_tools.members import Members
 from landscape_tools.member import Member
@@ -14,15 +15,22 @@ from landscape_tools.member import Member
 
 class LFXProjects(Members):
 
-    project = 'tlf' # The Linux Foundation
+    project = '' 
     defaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
-    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?$filter=parentSlug%20eq%20{}'
+    endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?$filter=parentSlug%20eq%20{}&pageSize=2000&orderBy=name'
+
+    singleSlugEndpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={}' 
 
     defaultCategory = ''
     defaultSubcategory = ''
 
-    def __init__(self, project = None, loadData = True):
+    activeOnly = True
+    addTechnologySector = True
+    addIndustrySector = True
+    addPMOManagedStatus = True
+    addParentProject = True
 
+    def __init__(self, project = None, loadData = True):
         if project:
             self.project = project
         super().__init__(loadData)
@@ -30,25 +38,32 @@ class LFXProjects(Members):
     def loadData(self):
         print("--Loading LFX Projects data--")
 
-        with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
+        session = requests_cache.CachedSession('landscape')
+        with session.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()
             for record in memberList['Data']:
                 if 'Website' in record and self.find(record['Name'],record['Website']):
                     continue
-                if record['Status'] != 'Active':
+                if self.activeOnly and record['Status'] != 'Active':
                     continue
                 if not record['DisplayOnWebsite']:
                     continue
                 if record['TestRecord']:
                     continue
 
+                second_path = []
                 member = Member()
+                member.membership = 'All'
                 try:
                     member.orgname = record['Name']
                 except (ValueError,KeyError) as e:
                     pass
                 try:
                     member.website = record['Website']
+                except (ValueError,KeyError) as e:
+                    pass
+                try:
+                    member.project_id = record['ProjectID']
                 except (ValueError,KeyError) as e:
                     pass
                 try:
@@ -67,6 +82,11 @@ class LFXProjects(Members):
                         member.slug = record['Slug']
                     except ValueError as e:
                         pass
+                if 'Description' in record:
+                    try:
+                        member.description = record['Description']
+                    except ValueError as e:
+                        pass
                 if 'ProjectLogo' in record:
                     try:
                         member.logo = record['ProjectLogo']
@@ -82,17 +102,47 @@ class LFXProjects(Members):
                         member.twitter = record['Twitter']
                     except ValueError as e:
                         pass
-                if 'IndustrySector' in record and record['IndustrySector'] != '':
+                if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager'] != False:
                     try:
-                        member.second_path = 'Industry / {}'.format(record['IndustrySector'])
+                        member.second_path.append('PMO Managed / All')
                     except ValueError as e:
                         pass
+                if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':
+                    try:
+                        second_path.append('Industry / {}'.format(record['IndustrySector']))
+                    except ValueError as e:
+                        pass
+                if self.addTechnologySector and 'TechnologySector' in record and record['TechnologySector'] != '':
+                    try:
+                        sectors = record['TechnologySector'].split(";")
+                        for sector in sectors:
+                            second_path.append('Technology Sector / {}'.format(sector))
+                    except ValueError as e:
+                        pass
+                if self.addParentProject and 'ParentSlug' in record and record['ParentSlug'] != '':
+                    try:
+                        parentName = self.lookupParentProjectNameBySlug(record['ParentSlug'])
+                        if parentName:
+                            second_path.append('Project Group / {}'.format(parentName))
+                    except ValueError as e:
+                        pass
+
+                member.second_path = second_path
+                #print(member.second_path)
                 self.members.append(member)
 
     def findBySlug(self, slug):
         for member in self.members:
             if member.slug is not None and member.slug == slug:
                 return member
+
+    def lookupParentProjectNameBySlug(self, slug):
+        session = requests_cache.CachedSession('landscape')
+        with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
+            parentProject = endpointResponse.json()
+            return parentProject['Data'][0]["Name"]
+        
+        return False
 
     def find(self, org, website, membership = None, repo_url = None):
         normalizedorg = self.normalizeCompany(org)

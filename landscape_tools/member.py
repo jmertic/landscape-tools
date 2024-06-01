@@ -22,6 +22,7 @@ class Member:
     orgname = None
     membership = None
     entrysuffix = ''
+    second_path = []
     __website = None
     __logo = None
     __crunchbase = None
@@ -121,6 +122,7 @@ class Member:
             self._validLogo = False
             raise ValueError("Member.logo must be not be blank for {orgname}".format(orgname=self.orgname))
 
+        logo = logo.split("?")[0]
         if not os.path.splitext(logo)[1] == '.svg':
             self._validLogo = False
             raise ValueError("Member.logo for {orgname} must be an svg file - '{logo}' provided".format(logo=logo,orgname=self.orgname))
