@@ -13,7 +13,9 @@ from urllib.parse import urlparse
 from url_normalize import url_normalize
 import validators
 import requests
-#from github import Github, GithubException, UnknownObjectException
+
+from landscape_tools.svglogo import SVGLogo
+
 #
 # Member object to ensure we have normalization on fields. Only required fields are defined; others can be added dynamically.
 #
@@ -114,21 +116,29 @@ class Member:
 
     @property
     def logo(self):
-        return self.__logo
+        return self.__logo.filename(self.orgname) if type(self.__logo) is SVGLogo else ""
 
     @logo.setter
     def logo(self, logo):
         if logo is None:
             self._validLogo = False
             raise ValueError("Member.logo must be not be blank for {orgname}".format(orgname=self.orgname))
+        
+        if type(logo) is SVGLogo:
+            self.__logo = logo
+        elif urlparse(logo).scheme != '':
+            self.__logo = SVGLogo(url=logo)
+        else:
+            self.__logo = SVGLogo(filename=logo)
 
-        logo = logo.split("?")[0]
-        if not os.path.splitext(logo)[1] == '.svg':
+        if not self.__logo.isValid():
             self._validLogo = False
-            raise ValueError("Member.logo for {orgname} must be an svg file - '{logo}' provided".format(logo=logo,orgname=self.orgname))
+            raise ValueError("Member.logo for {orgname} invalid format - '{logo}' provided".format(logo=self.__logo,orgname=self.orgname))
 
         self._validLogo = True
-        self.__logo = logo
+    
+    def hostLogo(self, path = "./"):
+        self.__logo.save(self.orgname,path)
 
     @property
     def twitter(self):

@@ -65,15 +65,9 @@ def main():
                         print("...Updating crunchbase from Crunchbase")
                         member.crunchbase = cbmember.crunchbase
                         
-                try:
-                    member.logo = lflandscape.hostLogo(logo=member.logo,orgname=member.orgname)
-                except ValueError as e:
-                    pass
-
                 # Write out to missing.csv if it's missing key parameters
                 if not member.isValidLandscapeItem():
                     print("...Missing key attributes - skip")
-                    lflandscape.removeHostedLogo(member.logo)
                     lflandscape.writeMissing(
                         member.orgname,
                         member.logo,
@@ -83,6 +77,7 @@ def main():
                 # otherwise we can add it
                 else:
                     print("...Added to Landscape")
+                    member.hostLogo(config.hostedLogosDir)
                     lflandscape.membersAdded += 1
                     # host the logo
                     if config.memberSuffix:

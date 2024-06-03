@@ -12,12 +12,14 @@ import os
 import unicodedata
 import tempfile
 from pathlib import Path
+from slugify import slugify
 
 ## third party modules
 import ruamel.yaml
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import cairo
 
 class LandscapeOutput:
 
@@ -72,8 +74,6 @@ class LandscapeOutput:
             if x['name'] == self.landscapeMemberCategory:
                 x['subcategories'] = self.landscapeMembers
 
-        
-
     def loadLandscape(self, reset=False):
         with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
             self.landscape = ruamel.yaml.YAML().load(fileobject)
@@ -98,61 +98,13 @@ class LandscapeOutput:
                         if x['name'] == self.landscapeMemberCategory:
                             self.landscapeMembers = x['subcategories']
 
-    def writeMissing(self, name, logo, homepage_url, crunchbase):
+    def writeMissing(self, name, homepage_url):
         if self._missingcsvfilewriter is None:
             self._missingcsvfilewriter = csv.writer(open(self.missingcsvfile, mode='w'), delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-            self._missingcsvfilewriter.writerow(['name','logo','homepage_url','crunchbase'])
+            self._missingcsvfilewriter.writerow(['name','homepage_url'])
 
         self.membersErrors = self.membersErrors + 1
-        self._missingcsvfilewriter.writerow([name, logo, homepage_url, crunchbase])
-
-    def hostLogo(self,logo,orgname):
-        if logo is None or ('https://' not in logo and 'http://' not in logo):
-            return logo
-
-        print("...Hosting logo for "+orgname)
-        filename = str(orgname).strip().replace(' ', '_')
-        filename = filename.replace('.', '')
-        filename = filename.replace(',', '')
-        filename = re.sub(r'(?u)[^-\w.]', '', filename)
-        filename = filename.lower()
-        filename = unicodedata.normalize('NFKD',filename).encode('ascii', 'ignore').decode('ascii')+".svg" 
-        filename = filename.lower()
-       
-        ## create a random file name in case somehow the generated one doesn't work
-        if filename == ".svg":
-            filename = os.path.basename(tempfile.NamedTemporaryFile(mode="wb", suffix=".svg").name)
-        
-        filenamepath = os.path.normpath(self.hostedLogosDir+"/"+filename)
-        session = requests.Session()
-        retry = Retry(backoff_factor=0.5)
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)        
-        while True:
-            try:
-                r = session.get(logo, allow_redirects=True)
-                break
-            except requests.exceptions.ChunkedEncodingError:
-                pass
-        if r.status_code != 200:
-            # failed to get image; if there is already an image there do nothing
-            # if it doesn't exist, return the logo URL given
-            if os.path.isfile(filenamepath):
-                return filename
-            else:
-                return ''
-        # catch places where autocrop will reject the image
-        if r.content.find(b'base64') != -1 or r.content.find(b'<text') != -1 or r.content.find(b'<image') != -1 or r.content.find(b'<tspan') != -1:
-            return '';
-        with open(filenamepath, 'wb') as fp:
-            fp.write(r.content)
-
-        return filename
-
-    def removeHostedLogo(self,logo):
-        if logo and os.path.isfile(os.path.normpath(self.hostedLogosDir+"/"+logo)):
-            os.remove(os.path.normpath(self.hostedLogosDir+"/"+logo))
+        self._missingcsvfilewriter.writerow([name, homepage_url])
 
     def _removeNulls(self,yamlout):
         dump = re.sub(r'/(- \w+:) null/g', '$1', yamlout)

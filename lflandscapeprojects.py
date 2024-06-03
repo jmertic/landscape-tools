@@ -19,7 +19,6 @@ import re
 
 import ruamel.yaml
 
-
 def main():
     
     startTime = datetime.now()
@@ -37,10 +36,6 @@ def main():
     lflandscape.missingcsvfile = config.missingcsvfile
     lflandscape.hostedLogosDir = config.hostedLogosDir
     lflandscape.loadLandscape(reset=True)
-    #lflandscape.landscapefile = config.landscapefile
-    #lflandscape.missingcsvfile = config.missingcsvfile
-    #lflandscape.newLandscape()
-
 
     # now pull the projects list and add entries for them
     for member in lfxprojects.members:
@@ -48,24 +43,18 @@ def main():
         for memberClass in lflandscape.landscapeMembers:
             landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
             if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ) and ( memberClass['name'] == landscapeMemberClass['category'] ) :
-                try:
-                    member.logo = lflandscape.hostLogo(logo=member.logo,orgname=member.orgname)
-                except ValueError as e:
-                    pass
-
+                 
                 # Write out to missing.csv if it's missing key parameters
                 if not member.isValidLandscapeItem():
                     print("...Missing key attributes - skip")
-                    lflandscape.removeHostedLogo(member.logo)
                     lflandscape.writeMissing(
                         member.orgname,
-                        member.logo,
-                        member.website,
-                        member.crunchbase
+                        member.website
                         )
                 # otherwise we can add it
                 else:
                     print("...Added to Landscape")
+                    member.hostLogo(config.hostedLogosDir)
                     lflandscape.membersAdded += 1
                     # host the logo
                     if config.memberSuffix:

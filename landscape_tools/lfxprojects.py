@@ -5,20 +5,22 @@
 #
 # encoding=utf8
 
+import logging
+
 # third party modules
 import requests
 import requests_cache
+from urllib.parse import urlparse
 
 from landscape_tools.members import Members
 from landscape_tools.member import Member
-
+from landscape_tools.svglogo import SVGLogo
 
 class LFXProjects(Members):
 
     project = '' 
     defaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?$filter=parentSlug%20eq%20{}&pageSize=2000&orderBy=name'
-
     singleSlugEndpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={}' 
 
     defaultCategory = ''
@@ -77,21 +79,21 @@ class LFXProjects(Members):
                         member.parent_slug = self.project
                 else:
                     member.parent_slug = 'tlf'
-                if 'Slug' in record:
-                    try:
-                        member.slug = record['Slug']
-                    except ValueError as e:
-                        pass
-                if 'Description' in record:
-                    try:
-                        member.description = record['Description']
-                    except ValueError as e:
-                        pass
+                try:
+                    member.slug = record['Slug']
+                except (ValueError,KeyError) as e:
+                    pass
+                try:
+                    member.description = record['Description']
+                except (ValueError,KeyError) as e:
+                    pass
                 if 'ProjectLogo' in record:
                     try:
                         member.logo = record['ProjectLogo']
                     except ValueError as e:
-                        pass
+                        member.logo = SVGLogo.createTextLogo(member.orgname)
+                else:
+                    member.logo = SVGLogo.createTextLogo(member.orgname)
                 if 'CrunchBaseURL' in record and record['CrunchBaseURL'] != '':
                     try:
                         member.crunchbase = record['CrunchBaseURL']
@@ -109,24 +111,33 @@ class LFXProjects(Members):
                         pass
                 if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':
                     try:
-                        second_path.append('Industry / {}'.format(record['IndustrySector']))
+                        second_path.append('Industry / {}'.format(record['IndustrySector'].replace("/",":")))
                     except ValueError as e:
                         pass
                 if self.addTechnologySector and 'TechnologySector' in record and record['TechnologySector'] != '':
                     try:
                         sectors = record['TechnologySector'].split(";")
                         for sector in sectors:
-                            second_path.append('Technology Sector / {}'.format(sector))
+                            second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
                     except ValueError as e:
                         pass
                 if self.addParentProject and 'ParentSlug' in record and record['ParentSlug'] != '':
                     try:
                         parentName = self.lookupParentProjectNameBySlug(record['ParentSlug'])
                         if parentName:
-                            second_path.append('Project Group / {}'.format(parentName))
+                            second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
                     except ValueError as e:
                         pass
-
+                if 'RepositoryURL' in record and record['RepositoryURL'] != '':
+                    try:
+                        if self._isGitHubRepo(record['RepositoryURL']):
+                            member.repo_url = record['RepositoryURL']
+                        elif self._isGitHubOrg(record['RepositoryURL']):
+                            member.project_org = record['RepositoryURL']
+                            member.repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(record['RepositoryURL']
+)
+                    except ValueError as e:
+                        pass
                 member.second_path = second_path
                 #print(member.second_path)
                 self.members.append(member)
@@ -135,6 +146,22 @@ class LFXProjects(Members):
         for member in self.members:
             if member.slug is not None and member.slug == slug:
                 return member
+
+    def _isGitHubRepo(self, url):
+        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 3
+
+    def _isGitHubOrg(self, url):
+        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 2
+
+    def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
+        if not self._isGitHubOrg(url):
+            return url
+
+        apiEndPoint = 'https://api.github.com/orgs{}'.format(urlparse(url).path)
+        session = requests_cache.CachedSession('githubapi')
+        with session.get(apiEndPoint) as endpointResponse:
+            response = endpointResponse.json()
+            return response[0]["html_url"]
 
     def lookupParentProjectNameBySlug(self, slug):
         session = requests_cache.CachedSession('landscape')
