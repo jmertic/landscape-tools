@@ -16,11 +16,22 @@ from datetime import datetime
 from argparse import ArgumentParser,FileType
 import os
 from os import path
+import logging
+import sys
 
 def main():
     
     startTime = datetime.now()
 
+    logging.basicConfig(
+        level=logging.WARN,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            #logging.FileHandler("debug.log"),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    
     # load config
     parser = ArgumentParser()
     parser.add_argument("-c", "--config", dest="configfile", type=FileType('r'), help="name of YAML config file")
@@ -34,65 +45,13 @@ def main():
 
     # load member data sources
     lfxmembers = LFXMembers(project = config.project)
-    cbmembers = CrunchbaseMembers()
-    lsmembers = LandscapeMembers()
 
-    lflandscape = LandscapeOutput()
-    lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
-    lflandscape.landscapeMemberClasses = config.landscapeMemberClasses
-    lflandscape.landscapefile = config.landscapefile
-    lflandscape.missingcsvfile = config.missingcsvfile
-    lflandscape.hostedLogosDir = config.hostedLogosDir
-    if path.exists(config.landscapefile):
-        lflandscape.loadLandscape(reset=True)
-    else:
-        lflandscape.newLandscape()
-
-    # Iterate through the LFXMembers and update the landscapeMembers
-    for member in lfxmembers.members:
-        print("Processing "+member.orgname)
-        for memberClass in lflandscape.landscapeMembers:
-            landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
-            if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ) and ( memberClass['name'] == landscapeMemberClass['category'] ) :
-                # lookup in other landscapes
-                for lookupmember in lsmembers.find(member.orgname, member.website):
-                    print("...Overlay other landscape data")
-                    lookupmember.overlay(member)
-                
-                # overlay crunchbase data
-                for cbmember in cbmembers.find(member.orgname,member.website):
-                    if (not member.crunchbase and cbmember):
-                        print("...Updating crunchbase from Crunchbase")
-                        member.crunchbase = cbmember.crunchbase
-                        
-                # Write out to missing.csv if it's missing key parameters
-                if not member.isValidLandscapeItem():
-                    print("...Missing key attributes - skip")
-                    lflandscape.writeMissing(
-                        member.orgname,
-                        member.logo,
-                        member.website,
-                        member.crunchbase
-                        )
-                # otherwise we can add it
-                else:
-                    print("...Added to Landscape")
-                    member.hostLogo(config.hostedLogosDir)
-                    lflandscape.membersAdded += 1
-                    # host the logo
-                    if config.memberSuffix:
-                        member.entrysuffix = config.memberSuffix
-                    memberClass['items'].append(member.toLandscapeItemAttributes())
-                break
-
-    # Interate through LFXProjects and update the landscapeMembers
-    lfxprojects = LFXProjects(project = config.project)
-    for project in lfxprojects.members:
-        print("Processing "+member.orgname)
-
-
+    lflandscape = LandscapeOutput(config, resetCategory=True)
+    lflandscape.processIntoLandscape(lfxmembers.members)
     lflandscape.updateLandscape()
-    print("This took "+str(datetime.now() - startTime)+" seconds")
+    
+    logging.getLogger().info("Successfully added {} members and skipped {} members".format(lflandscape.itemsAdded,lflandscape.itemsErrors))
+    logging.getLogger().info("This took {} seconds".format(datetime.now() - startTime))
 
 if __name__ == '__main__':
     main()

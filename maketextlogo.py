@@ -21,7 +21,7 @@ def main():
     parser.add_argument("-o", "--output", dest="filename", help="Filename to save created logo to")
     args = parser.parse_args()
 
-    svglogo = SVGLogo.createTextLogo(args.orgname)
+    svglogo = SVGLogo(name=args.orgname)
 
     if args.autocrop:
         svglogo.autocrop()

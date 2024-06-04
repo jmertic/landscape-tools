@@ -8,6 +8,7 @@
 ## built in modules
 import csv
 import os.path
+import logging
 
 from landscape_tools.members import Members
 from landscape_tools.member import Member
@@ -23,28 +24,23 @@ class CrunchbaseMembers(Members):
 
     def loadData(self):
         if os.path.isfile(self.bulkdatafile):
-            print("--Loading Crunchbase bulk export data--")
+            logger = logging.getLogger()
+            logger.info("Loading Crunchbase bulk export data")
             with open(self.bulkdatafile, newline='') as csvfile:
                 memberreader = csv.reader(csvfile, delimiter=',', quotechar='"')
                 fields = next(memberreader)
                 for row in memberreader:
                     member = Member()
-                    try:
-                        member.membership = ''
-                    except ValueError as e:
-                        pass # avoids all the Exceptions for logo
-                    try:
-                        member.orgname = row[1]
-                    except ValueError as e:
-                        pass # avoids all the Exceptions for logo
+                    member.membership = ''
+                    member.orgname = row[1]
                     try:
                         member.website = row[11]
                     except ValueError as e:
-                        pass # avoids all the Exceptions for logo
+                        logger.warn(e)
                     try:
                         member.crunchbase = row[4]
                     except ValueError as e:
-                        pass # avoids all the Exceptions for logo
+                        logger.warn(e)
 
                     self.members.append(member)
 

@@ -38,7 +38,6 @@ class Members(ABC):
         return found
 
     def normalizeCompany(self, company):
-
         if company is None:
             return ''
 
@@ -75,4 +74,3 @@ class Members(ABC):
 
     def normalizeURL(self, url):
         return url_normalize(url)
-

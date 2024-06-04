@@ -8,6 +8,7 @@
 ## built in modules
 import os
 from urllib.parse import urlparse
+import logging
 
 ## third party modules
 from url_normalize import url_normalize
@@ -34,7 +35,6 @@ class Member:
     # we'll use these to keep track of whether the member has valid fields
     _validWebsite = False
     _validLogo = False
-    _validCrunchbase = False
     _validTwitter = False
     _validRepo = False
 
@@ -51,29 +51,37 @@ class Member:
             repo_url = url_normalize(repo_url, default_scheme='https')
             urlpath = urlparse(repo_url,scheme='http').path[1:]
 
-            if repo_url.startswith('https://github.com/'): 
-                if urlpath.find("/") == -1:
-                    self._validRepo = True
-                    with requests.get('https://api.github.com/orgs/{}/repos'.format(urlpath),headers={'Authorization': 'Bearer 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'}) as endpointResponse:
-                        if endpointResponse.status_code == requests.codes.ok:
-                            repoList = endpointResponse.json()
-                            if type(repoList) == list and len(repoList):
-                                print('...setting repo_url to https://github.com/{}/{}'.format(urlpath,repoList[0]['name']))
-                                self.__repo_url = 'https://github.com/{}/{}'.format(urlpath,repoList[0]['name'])
-                                self.project_org = repo_url;
-                        else:
-                            self._validRepo = False
-                            raise ValueError("invalid repo_url and the GitHub organization has no public repos either for {orgname}".format(orgname=self.orgname))
-                else:
-                    # clean up to ensure it's a valid github repo url
-                    x = urlparse(repo_url);
-                    parts = x.path.split("/");
-                    self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
-
+            if self._isGitHubRepo(repo_url):
+                # clean up to ensure it's a valid github repo url
+                x = urlparse(repo_url);
+                parts = x.path.split("/");
+                self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
+            elif self._isGitHubOrg(repo_url):
+                self.project_org = repo_url
+                self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
             else:
                 self.__repo_url = repo_url
             
             self._validRepo = True
+
+    def _isGitHubRepo(self, url):
+        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 3
+
+    def _isGitHubOrg(self, url):
+        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 2
+
+    def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
+        if not self._isGitHubOrg(url):
+            return url
+
+        apiEndPoint = 'https://api.github.com/orgs{}'.format(urlparse(url).path)
+        session = requests_cache.CachedSession('githubapi')
+        with session.get(apiEndPoint) as endpointResponse:
+            response = endpointResponse.json()
+            if not response.ok:
+                raise ValueError("Cannot find repos under GitHub Organization {}".format(url))
+            
+            return response[0]["html_url"]
 
     @property
     def crunchbase(self):
@@ -81,20 +89,8 @@ class Member:
 
     @crunchbase.setter
     def crunchbase(self, crunchbase):
-        if crunchbase is None:
-            self._validCrunchbase = False
-            raise ValueError("Member.crunchbase must be not be blank for {orgname}".format(orgname=self.orgname))
-        if not crunchbase.startswith('https://www.crunchbase.com/organization/'):
-            # fix the URL if it's not formatted right
-            o = urlparse(crunchbase)
-            if (o.netloc == "crunchbase.com" or o.netloc == "www.crunchbase.com") and o.path.startswith("/organization"):
-                crunchbase = "https://www.crunchbase.com{path}".format(path=o.path)
-            else:
-                self._validCrunchbase = False
-                raise ValueError("Member.crunchbase for {orgname} must be set to a valid crunchbase url - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
-
-        self._validCrunchbase = True
-        self.__crunchbase = crunchbase
+        if crunchbase and 'crunchbase.com' in urlparse(crunchbase).netloc:
+            self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
 
     @property
     def website(self):
@@ -104,12 +100,12 @@ class Member:
     def website(self, website):
         if website is None:
             self._validWebsite = False
-            raise ValueError("Member.website must be not be blank for {orgname}".format(orgname=self.orgname))
+            raise ValueError("Member.website must be not be blank for '{orgname}'".format(orgname=self.orgname))
 
         normalizedwebsite = url_normalize(website, default_scheme='https')
         if not validators.url(normalizedwebsite):
             self._validWebsite = False
-            raise ValueError("Member.website for {orgname} must be set to a valid website - '{website}' provided".format(website=website,orgname=self.orgname))
+            raise ValueError("Member.website for '{orgname}' must be set to a valid website - '{website}' provided".format(website=website,orgname=self.orgname))
 
         self._validWebsite = True
         self.__website = normalizedwebsite
@@ -122,7 +118,7 @@ class Member:
     def logo(self, logo):
         if logo is None:
             self._validLogo = False
-            raise ValueError("Member.logo must be not be blank for {orgname}".format(orgname=self.orgname))
+            raise ValueError("Member.logo must be not be blank for '{orgname}'".format(orgname=self.orgname))
         
         if type(logo) is SVGLogo:
             self.__logo = logo
@@ -133,7 +129,7 @@ class Member:
 
         if not self.__logo.isValid():
             self._validLogo = False
-            raise ValueError("Member.logo for {orgname} invalid format - '{logo}' provided".format(logo=self.__logo,orgname=self.orgname))
+            raise ValueError("Member.logo for '{orgname}' invalid format".format(logo=logo,orgname=self.orgname))
 
         self._validLogo = True
     
@@ -157,7 +153,7 @@ class Member:
                 twitter = "https://twitter.com{path}".format(path=o.path)
             else:
                 self._validTwitter = False
-                raise ValueError("Member.twitter for {orgname} must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=twitter,orgname=self.orgname))
+                raise ValueError("Member.twitter for '{orgname}' must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=twitter,orgname=self.orgname))
 
         self._validTwitter = True
         self.__twitter = twitter
@@ -199,10 +195,13 @@ class Member:
                 continue
             elif i == 'twitter' and ( not self.twitter or self.twitter == ''):
                 continue
+            elif i == 'second_path' and len(self.second_path) == 0:
+                continue
             elif hasattr(self,i):
                 returnentry[i] = getattr(self,i)
 
         if not self.crunchbase:
+            logging.getLogger().warn("No Crunchbase entry for '{}'".format(self.orgname))
             returnentry['organization'] = {'name':self.orgname}
             del returnentry['crunchbase']
 

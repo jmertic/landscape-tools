@@ -7,64 +7,37 @@
 
 from landscape_tools.config import Config
 from landscape_tools.lfxprojects import LFXProjects
-from landscape_tools.landscapemembers import LandscapeMembers
-from landscape_tools.crunchbasemembers import CrunchbaseMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
 
+import logging
+import sys
 from datetime import datetime
 from argparse import ArgumentParser,FileType
-from os import path
-from pathlib import Path
-import re
-
-import ruamel.yaml
 
 def main():
-    
     startTime = datetime.now()
-    
+   
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            #logging.FileHandler("debug.log"),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+
     lfxprojects = LFXProjects()
 
     config = Config()
-    config.landscapeMemberCategory = 'Projects'
-    config.landscapeMemberClasses = [{"name": "All", "category": "All"}]
+    config.landscapeCategory = 'Projects'
+    config.landscapeSubcategories = [{"name": "All", "category": "All"}]
 
-    lflandscape = LandscapeOutput()
-    lflandscape.landscapeMemberCategory = config.landscapeMemberCategory
-    lflandscape.landscapeMemberClasses = config.landscapeMemberClasses
-    lflandscape.landscapefile = config.landscapefile
-    lflandscape.missingcsvfile = config.missingcsvfile
-    lflandscape.hostedLogosDir = config.hostedLogosDir
-    lflandscape.loadLandscape(reset=True)
-
-    # now pull the projects list and add entries for them
-    for member in lfxprojects.members:
-        print("Processing {}...".format(member.orgname))
-        for memberClass in lflandscape.landscapeMembers:
-            landscapeMemberClass = next((item for item in config.landscapeMemberClasses if item["name"] == member.membership), None)
-            if ( not landscapeMemberClass is None ) and ( landscapeMemberClass['name'] == member.membership ) and ( memberClass['name'] == landscapeMemberClass['category'] ) :
-                 
-                # Write out to missing.csv if it's missing key parameters
-                if not member.isValidLandscapeItem():
-                    print("...Missing key attributes - skip")
-                    lflandscape.writeMissing(
-                        member.orgname,
-                        member.website
-                        )
-                # otherwise we can add it
-                else:
-                    print("...Added to Landscape")
-                    member.hostLogo(config.hostedLogosDir)
-                    lflandscape.membersAdded += 1
-                    # host the logo
-                    if config.memberSuffix:
-                        member.entrysuffix = config.memberSuffix
-                    memberClass['items'].append(member.toLandscapeItemAttributes())
-                break
-
+    lflandscape = LandscapeOutput(config, resetCategory=True)
+    lflandscape.processIntoLandscape(lfxprojects.members)
     lflandscape.updateLandscape()
-
-    print("This took "+str(datetime.now() - startTime)+" seconds")
+    
+    logging.getLogger().info("Successfully added {} members and skipped {} members".format(lflandscape.itemsAdded,lflandscape.itemsErrors))
+    logging.getLogger().info("This took {} seconds".format(datetime.now() - startTime))
 
 if __name__ == '__main__':
     main()

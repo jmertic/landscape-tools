@@ -10,6 +10,7 @@ import os
 import tempfile
 from pathlib import Path
 from slugify import slugify
+from typing import Self
 
 ## third party modules
 import requests
@@ -21,7 +22,7 @@ class SVGLogo:
 
     __contents = ''    
 
-    def __init__(self, contents = None, filename = None, url = None):
+    def __init__(self, contents = None, filename = None, url = None, name = None):
         if contents:
             self.__contents = contents
         elif filename:
@@ -40,46 +41,48 @@ class SVGLogo:
                 except requests.exceptions.ChunkedEncodingError:
                     pass
             if r.status_code == 200:
-                self.__contents = r.content
+                self.__contents = r.content.decode('utf-8')
+        elif name:
+           width = len(name) * 40
+           x = width / 2
+           height = len(name.split(" ")) * 80 
+           with tempfile.TemporaryFile() as fp:
+                with cairo.SVGSurface(fp, width, height) as surface:
+                    Context = cairo.Context(surface)
+                    Context.set_source_rgb(0,0,0)
+                    Context.set_font_size(60)
+                    Context.select_font_face(
+                        "Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+                    Context.move_to(0,50)
+                    parts = name.split(" ")
+                    n = 2
+                    for part in parts:
+                        Context.show_text(part)
+                        Context.move_to(0,n*60)
+                        n += 1
+                    Context.stroke()
+                    Context.save()
+
+                fp.seek(0)
+                self.__contents = fp.read().decode('utf-8')
 
     def __str__(self):
-        return self.__contents.decode('utf-8')
+        return self.__contents
 
     def filename(self, name):
-        return "{}.svg".format(slugify(os.path.splitext(name)[0]))
+        return "{}.svg".format(slugify(os.path.splitext(name)[0],separator='_'))
 
     def save(self, name, path = './'):
         filename = self.filename(name)
         filenamepath = os.path.normpath("{}/{}".format(path,filename))
         
-        with open(filenamepath, 'wb') as fp:
+        with open(filenamepath, 'w') as fp:
             fp.write(self.__contents)
 
         return filename
 
-    @staticmethod
-    def createTextLogo(name):
-        width = len(name) * 40
-        x = width / 2
-        fp = tempfile.TemporaryFile()
-        with cairo.SVGSurface(fp, width, 80) as surface:
-            Context = cairo.Context(surface)
-            Context.set_source_rgb(0,0,0)
-            Context.set_font_size(60)
-            Context.select_font_face(
-                "Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-            Context.move_to(0,50)
-            Context.show_text(name)
-            Context.stroke()
-            Context.save()
-
-        fp.seek(0)
-        contents = fp.read()
-        return SVGLogo(contents)
-
     def isValid(self):
-        return True
-        return self.__contents.find(b'base64') == -1 and self.__contents.find(b'<text') == -1 and self.__contents.find(b'<image') == -1 and self.__contents.find(b'<tspan') == -1
+        return self.__contents.find('base64') == -1 and self.__contents.find('<text') == -1 and self.__contents.find('<image') == -1 and self.__contents.find('<tspan') == -1
 
     def autocrop(self, title=''):
         postJson = {

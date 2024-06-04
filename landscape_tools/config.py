@@ -15,8 +15,8 @@ import ruamel.yaml
 class Config:
 
     project = ''
-    landscapeMemberCategory = 'Members'
-    landscapeMemberClasses = [
+    landscapeCategory = 'Members'
+    landscapeSubcategories = [
         {"name": "Premier Membership", "category": "Premier"},
         {"name": "General Membership", "category": "General"},
     ]
@@ -27,25 +27,19 @@ class Config:
 
     def __init__(self, config_file = ''):
         if config_file != '' and os.path.isfile(config_file):
-            try:
-                with open(config_file, 'r') as stream:
-                    data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(stream)
-            except:
-                sys.exit(config_file+" config file is not defined")
+            with open(config_file, 'r') as stream:
+                data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(stream)
 
-            if 'project' in data_loaded:
-                self.project = data_loaded['project']
-            else:
-                sys.exit("'project' not defined in config file")
-            if 'landscapeMemberCategory' in data_loaded:
-                self.landscapeMemberCategory = data_loaded['landscapeMemberCategory']
-            if 'landscapeMemberClasses' in data_loaded:
-                self.landscapeMemberClasses = data_loaded['landscapeMemberClasses']
-            if 'landscapefile' in data_loaded:
-                self.landscapefile = data_loaded['landscapefile']
-            if 'missingcsvfile' in data_loaded:
-                self.missingcsvfile = data_loaded['missingcsvfile']
-            if 'memberSuffix' in data_loaded:
-                self.memberSuffix = data_loaded['memberSuffix']
-            if 'hostedLogosDir' in data_loaded:
-                self.hostedLogosDir = data_loaded['hostedLogosDir']
+                try:
+                    self.project = data_loaded['project']
+                except KeyError as e:
+                    raise ValueError("'project' not defined in config file")
+                
+                self.landscapeCategory = data_loaded['landscapeCategory'] if 'landscapeCategory' in data_loaded else Config.landscapeCategory
+                self.landscapeCategory = data_loaded['landscapeMemberCategory'] if 'landscapeMemberCategory' in data_loaded else Config.landscapeCategory
+                self.landscapeSubcategories = data_loaded['landscapeSubcategories'] if 'landscapeSubcategories' in data_loaded else Config.landscapeSubcategories
+                self.landscapeSubcategories = data_loaded['landscapeMemberClasses'] if 'landscapeMemberClasses' in data_loaded else Config.landscapeSubcategories
+                self.landscapefile = data_loaded['landscapefile'] if 'landscapefile' in data_loaded else Config.landscapefile
+                self.missingcsvfile = data_loaded['missingcsvfile'] if 'missingcsvfile' in data_loaded else Config.missingcsvfile
+                self.hostedLogosDir = data_loaded['hostedLogosDir'] if 'hostedLogosDir' in data_loaded else Config.hostedLogosDir
+                self.memberSuffix = data_loaded['memberSuffix'] if 'memberSuffix' in data_loaded else Config.memberSuffix

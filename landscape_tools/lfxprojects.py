@@ -38,7 +38,8 @@ class LFXProjects(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading LFX Projects data--")
+        logger = logging.getLogger()
+        logger.info("Loading LFX Projects data")
 
         session = requests_cache.CachedSession('landscape')
         with session.get(self.endpointURL.format(self.project)) as endpointResponse:
@@ -56,90 +57,64 @@ class LFXProjects(Members):
                 second_path = []
                 member = Member()
                 member.membership = 'All'
+                member.orgname = record['Name'] if 'Name' in record else None
+                logger.info("Found LFX Project '{}'".format(member.orgname))
+                member.project_id = record['ProjectID'] if 'ProjectID' in record else None
+                member.slug = record['Slug'] if 'Slug' in record else None
+                member.description = record['Description'] if 'Description' in record else None
                 try:
-                    member.orgname = record['Name']
+                    member.website = record['Website'] if 'Website' in record else None
                 except (ValueError,KeyError) as e:
-                    pass
+                    logger.warn(e)
                 try:
-                    member.website = record['Website']
+                    member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
                 except (ValueError,KeyError) as e:
-                    pass
+                    logger.warn(e)
                 try:
-                    member.project_id = record['ProjectID']
+                    member.parent_slug = record['ParentSlug'] if 'ParentSlug' in record else None
+                    if self.addParentProject:
+                        parentName = self.lookupParentProjectNameBySlug(member.parent_slug)
+                        if parentName:
+                            second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
                 except (ValueError,KeyError) as e:
-                    pass
+                    logger.warn(e)
+                    member.parent_slug = self.project
                 try:
-                    member.repo_url = record['RepositoryURL']
+                    member.logo = record['ProjectLogo'] if 'ProjectLogo' in record else None
                 except (ValueError,KeyError) as e:
-                    pass
-                if 'ParentSlug' in record:
+                    logger.warn(e)
+                    logger.info("Generating text logo for '{}'".format(member.orgname))
                     try:
-                        member.parent_slug = record['ParentSlug']
+                        member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
-                        member.parent_slug = self.project
-                else:
-                    member.parent_slug = 'tlf'
+                        logger.warn(e)
                 try:
-                    member.slug = record['Slug']
+                    member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else None
                 except (ValueError,KeyError) as e:
-                    pass
+                    logger.warn(e)
+                    member.crunchbase = self.defaultCrunchbase
                 try:
-                    member.description = record['Description']
+                    member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
-                    pass
-                if 'ProjectLogo' in record:
-                    try:
-                        member.logo = record['ProjectLogo']
-                    except ValueError as e:
-                        member.logo = SVGLogo.createTextLogo(member.orgname)
-                else:
-                    member.logo = SVGLogo.createTextLogo(member.orgname)
-                if 'CrunchBaseURL' in record and record['CrunchBaseURL'] != '':
-                    try:
-                        member.crunchbase = record['CrunchBaseURL']
-                    except ValueError as e:
-                        member.crunchbase = self.defaultCrunchbase
-                if 'Twitter' in record and record['Twitter'] != '':
-                    try:
-                        member.twitter = record['Twitter']
-                    except ValueError as e:
-                        pass
+                    logger.warn(e)
                 if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager'] != False:
                     try:
                         member.second_path.append('PMO Managed / All')
-                    except ValueError as e:
-                        pass
+                    except (ValueError,KeyError) as e:
+                        logger.warn(e)
                 if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':
                     try:
                         second_path.append('Industry / {}'.format(record['IndustrySector'].replace("/",":")))
-                    except ValueError as e:
-                        pass
+                    except (ValueError,KeyError) as e:
+                        logger.warn(e)
                 if self.addTechnologySector and 'TechnologySector' in record and record['TechnologySector'] != '':
                     try:
                         sectors = record['TechnologySector'].split(";")
                         for sector in sectors:
                             second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
-                    except ValueError as e:
-                        pass
-                if self.addParentProject and 'ParentSlug' in record and record['ParentSlug'] != '':
-                    try:
-                        parentName = self.lookupParentProjectNameBySlug(record['ParentSlug'])
-                        if parentName:
-                            second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
-                    except ValueError as e:
-                        pass
-                if 'RepositoryURL' in record and record['RepositoryURL'] != '':
-                    try:
-                        if self._isGitHubRepo(record['RepositoryURL']):
-                            member.repo_url = record['RepositoryURL']
-                        elif self._isGitHubOrg(record['RepositoryURL']):
-                            member.project_org = record['RepositoryURL']
-                            member.repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(record['RepositoryURL']
-)
-                    except ValueError as e:
-                        pass
+                    except (ValueError,KeyError) as e:
+                        logger.warn(e)
                 member.second_path = second_path
-                #print(member.second_path)
                 self.members.append(member)
 
     def findBySlug(self, slug):
@@ -147,27 +122,14 @@ class LFXProjects(Members):
             if member.slug is not None and member.slug == slug:
                 return member
 
-    def _isGitHubRepo(self, url):
-        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 3
-
-    def _isGitHubOrg(self, url):
-        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 2
-
-    def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
-        if not self._isGitHubOrg(url):
-            return url
-
-        apiEndPoint = 'https://api.github.com/orgs{}'.format(urlparse(url).path)
-        session = requests_cache.CachedSession('githubapi')
-        with session.get(apiEndPoint) as endpointResponse:
-            response = endpointResponse.json()
-            return response[0]["html_url"]
-
     def lookupParentProjectNameBySlug(self, slug):
         session = requests_cache.CachedSession('landscape')
-        with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
-            parentProject = endpointResponse.json()
-            return parentProject['Data'][0]["Name"]
+        if slug:
+            with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
+                parentProject = endpointResponse.json()
+                if len(parentProject['Data']) > 0: 
+                    return parentProject['Data'][0]["Name"]
+                logging.getLogger().warn("Couldn't find project for slug '{}'".format(slug)) 
         
         return False
 
