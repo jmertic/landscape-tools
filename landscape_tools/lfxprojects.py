@@ -65,7 +65,11 @@ class LFXProjects(Members):
                 try:
                     member.website = record['Website'] if 'Website' in record else None
                 except (ValueError,KeyError) as e:
-                    logger.warn(e)
+                    logger.info("{} - try to add RepositoryURL instead".format(e))
+                    try:
+                        member.website = record['RepositoryURL'] if 'RepositoryURL' in record else None
+                    except (ValueError,KeyError) as e:
+                        logger.warn(e)
                 try:
                     member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
                 except (ValueError,KeyError) as e:
@@ -82,8 +86,7 @@ class LFXProjects(Members):
                 try:
                     member.logo = record['ProjectLogo'] if 'ProjectLogo' in record else None
                 except (ValueError,KeyError) as e:
-                    logger.warn(e)
-                    logger.info("Generating text logo for '{}'".format(member.orgname))
+                    logger.info("{} - will try to create text logo".format(e))
                     try:
                         member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
@@ -97,9 +100,9 @@ class LFXProjects(Members):
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
                     logger.warn(e)
-                if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager'] != False:
+                if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager']:
                     try:
-                        member.second_path.append('PMO Managed / All')
+                        second_path.append('PMO Managed / All')
                     except (ValueError,KeyError) as e:
                         logger.warn(e)
                 if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':

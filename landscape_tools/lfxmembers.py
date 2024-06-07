@@ -40,7 +40,7 @@ class LFXMembers(Members):
                 member = Member()
                 member.orgname = record['Name'] if 'Name' in record else None
                 logger.info("Found LFX Member '{}'".format(member.orgname))
-                member.membership = self.__normalizeMembershipName(record['Membership']['Name']) if 'Membership' in record and 'Name' in record['Membership'] else None
+                member.membership = record['Membership']['Name'] if 'Membership' in record and 'Name' in record['Membership'] else None
                 try:
                     member.website = record['Website']
                 except ValueError as e:
@@ -48,8 +48,7 @@ class LFXMembers(Members):
                 try:
                     member.logo = record['Logo'] if 'Logo' in record else None
                 except ValueError as e:
-                    logger.warn(e)
-                    logger.warn("Generating text logo for '{}'".format(member.orgname))
+                    logger.info("{} - will try to create text logo".format(e))
                     try:
                         member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
@@ -74,11 +73,3 @@ class LFXMembers(Members):
                 members.append(member)
 
         return members
-
-    def __normalizeMembershipName(self,name):
-        parts = name.split(" - ")
-        if len(parts) > 1:
-            parts2 = parts[1].split(" (")
-            return parts2[0]
-        
-        return name

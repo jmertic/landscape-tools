@@ -111,13 +111,14 @@ class LandscapeOutput:
     def processIntoLandscape(self,members):
         logger = logging.getLogger()
         for member in members:
+            foundCategory = False
             for landscapeItemSubcategory in self.landscapeItems:
                 landscapeSubcategory = next((item for item in self.landscapeSubcategories if item["name"] == member.membership), None)
                 if ( not landscapeSubcategory is None ) and ( landscapeSubcategory['name'] == member.membership ) and ( landscapeItemSubcategory['name'] == landscapeSubcategory['category'] ) :
-                     
+                    foundCategory = True
                     # Write out to missing.csv if it's missing key parameters
                     if not member.isValidLandscapeItem():
-                        logger.warn("Not adding {} to Landscape - Missing key attributes".format(member.orgname))
+                        logger.warn("Not adding '{}' to Landscape - Missing key attributes {}".format(member.orgname,",".join(member.invalidLandscapeItemAttributes())))
                         self.writeMissing(
                             member.orgname,
                             member.website
@@ -132,6 +133,12 @@ class LandscapeOutput:
                             member.entrysuffix = self.memberSuffix
                         landscapeItemSubcategory['items'].append(member.toLandscapeItemAttributes())
                     break
+            if not foundCategory:
+                logger.warn("Not adding '{}' to Landscape - Membership Level '{}' not defined".format(member.orgname,member.membership))
+                self.writeMissing(
+                    member.orgname,
+                    member.website
+                    )
 
     @property
     def itemsAdded(self):

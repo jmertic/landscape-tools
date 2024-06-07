@@ -17,12 +17,18 @@ from argparse import ArgumentParser,FileType
 def main():
     startTime = datetime.now()
    
+    parser = ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-s", "--silent", dest="silent", action="store_true", help="Suppress all messages")
+    group.add_argument("-v", "--verbose", dest="verbose", action='store_true', help="Verbose output ( i.e. show all INFO level messages in addition to WARN and above )")
+    args = parser.parse_args()
+    
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.INFO if args.verbose else logging.WARN,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            #logging.FileHandler("debug.log"),
-            logging.StreamHandler(sys.stdout)
+            logging.FileHandler("debug.log"),
+            logging.StreamHandler(sys.stdout) if not args.silent else None
         ]
     )
 
@@ -31,6 +37,7 @@ def main():
     config = Config()
     config.landscapeCategory = 'Projects'
     config.landscapeSubcategories = [{"name": "All", "category": "All"}]
+    config.missingcsvfile = "missing-projects.csv"
 
     lflandscape = LandscapeOutput(config, resetCategory=True)
     lflandscape.processIntoLandscape(lfxprojects.members)

@@ -23,19 +23,23 @@ def main():
     
     startTime = datetime.now()
 
+    parser = ArgumentParser()
+    parser.add_argument("-c", "--config", dest="configfile", type=FileType('r'), help="name of YAML config file")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-s", "--silent", dest="silent", action="store_true", help="Suppress all messages")
+    group.add_argument("-v", "--verbose", dest="verbose", action='store_true', help="Verbose output ( i.e. show all INFO level messages in addition to WARN and above )")
+    args = parser.parse_args()
+    
     logging.basicConfig(
-        level=logging.WARN,
+        level=logging.INFO if args.verbose else logging.WARN,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            #logging.FileHandler("debug.log"),
-            logging.StreamHandler(sys.stdout)
+            logging.FileHandler("debug.log"),
+            logging.StreamHandler(sys.stdout) if not args.silent else None
         ]
     )
     
     # load config
-    parser = ArgumentParser()
-    parser.add_argument("-c", "--config", dest="configfile", type=FileType('r'), help="name of YAML config file")
-    args = parser.parse_args()
     if args.configfile:
         config = Config(args.configfile)
     elif os.path.isfile("config.yml"):

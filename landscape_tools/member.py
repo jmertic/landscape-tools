@@ -201,7 +201,7 @@ class Member:
                 returnentry[i] = getattr(self,i)
 
         if not self.crunchbase:
-            logging.getLogger().warn("No Crunchbase entry for '{}'".format(self.orgname))
+            logging.getLogger().info("No Crunchbase entry for '{}' - specifying orgname instead".format(self.orgname))
             returnentry['organization'] = {'name':self.orgname}
             del returnentry['crunchbase']
 
@@ -209,6 +209,17 @@ class Member:
         
     def isValidLandscapeItem(self):
         return self._validWebsite and self._validLogo and self.orgname != ''
+
+    def invalidLandscapeItemAttributes(self):
+        invalidAttributes = []
+        if not self._validWebsite:
+            invalidAttributes.append('website')
+        if not self._validLogo:
+            invalidAttributes.append('logo')
+        if self.orgname == '':
+            invalidAttributes.append('orgname')
+
+        return invalidAttributes
 
     #
     # Overlay this Member data on another Member
