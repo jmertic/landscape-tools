@@ -76,6 +76,9 @@ class LFXMembers(Members):
         return members
 
     def __normalizeMembershipName(self,name):
+        if name == 'Silver Membership - MPSF':
+            return name
+
         parts = name.split(" - ")
         if len(parts) > 1:
             parts2 = parts[1].split(" (")
