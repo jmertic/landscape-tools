@@ -65,10 +65,10 @@ class Member:
             self._validRepo = True
 
     def _isGitHubRepo(self, url):
-        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 3
+        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and urlparse(url).path.split("/") == 3
 
     def _isGitHubOrg(self, url):
-        return urlparse(url).netloc.endswith('github.com') and urlparse(url).path.split("/") == 2
+        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and urlparse(url).path.split("/") == 2
 
     def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
         if not self._isGitHubOrg(url):
@@ -89,7 +89,7 @@ class Member:
 
     @crunchbase.setter
     def crunchbase(self, crunchbase):
-        if crunchbase and 'crunchbase.com' in urlparse(crunchbase).netloc:
+        if crunchbase and ( urlparse(crunchbase).netloc == 'crunchbase.com' or urlparse(crunchbase).netloc == 'www.crunchbase.com' ):
             self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
 
     @property
