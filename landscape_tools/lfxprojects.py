@@ -55,12 +55,17 @@ class LFXProjects(Members):
                     continue
 
                 second_path = []
+                extra = {}
                 member = Member()
                 member.membership = 'All'
                 member.orgname = record['Name'] if 'Name' in record else None
                 logger.info("Found LFX Project '{}'".format(member.orgname))
                 member.project_id = record['ProjectID'] if 'ProjectID' in record else None
                 member.slug = record['Slug'] if 'Slug' in record else None
+                extra['accepted'] = record['StartDate'] if 'StartDate' in record else None 
+                # Let's include the root project
+                if member.slug == self.project:
+                    continue
                 member.description = record['Description'] if 'Description' in record else None
                 try:
                     member.website = record['Website'] if 'Website' in record else None
@@ -91,11 +96,7 @@ class LFXProjects(Members):
                         member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
                         logger.warn(e)
-                try:
-                    member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else None
-                except (ValueError,KeyError) as e:
-                    logger.warn(e)
-                    member.crunchbase = self.defaultCrunchbase
+                member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else self.defaultCrunchbase
                 try:
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
@@ -117,6 +118,7 @@ class LFXProjects(Members):
                             second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
                     except (ValueError,KeyError) as e:
                         logger.warn(e)
+                member.extra = extra
                 member.second_path = second_path
                 self.members.append(member)
 

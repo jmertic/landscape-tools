@@ -32,7 +32,7 @@ def main():
         ]
     )
 
-    lfxprojects = LFXProjects()
+    lfxprojects = LFXProjects(project="tlf")
 
     config = Config()
     config.landscapeCategory = 'Projects'

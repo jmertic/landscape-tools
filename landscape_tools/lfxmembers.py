@@ -61,6 +61,10 @@ class LFXMembers(Members):
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except ValueError as e:
                     logger.warn(e)
+                try:
+                    member.linkedin = record['LinkedInURL'] if 'LinkedInURL' in record else None
+                except ValueError as e:
+                    logger.warn(e)
                 self.members.append(member)
 
     def find(self, org, website, membership):

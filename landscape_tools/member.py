@@ -9,11 +9,14 @@
 import os
 from urllib.parse import urlparse
 import logging
+import socket
 
 ## third party modules
 from url_normalize import url_normalize
 import validators
 import requests
+import requests_cache
+from github import Github, GithubException, RateLimitExceededException
 
 from landscape_tools.svglogo import SVGLogo
 
@@ -26,9 +29,12 @@ class Member:
     membership = None
     entrysuffix = ''
     second_path = []
+    organization = {}
+    extra = {}
     __website = None
     __logo = None
     __crunchbase = None
+    __linkedin = None
     __twitter = None
     __repo_url = None
 
@@ -52,36 +58,74 @@ class Member:
             urlpath = urlparse(repo_url,scheme='http').path[1:]
 
             if self._isGitHubRepo(repo_url):
+                logging.info("{} is determined to be a GitHub Repo for orgname '{}'".format(repo_url,self.orgname))
                 # clean up to ensure it's a valid github repo url
                 x = urlparse(repo_url);
                 parts = x.path.split("/");
                 self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
             elif self._isGitHubOrg(repo_url):
+                logging.info("{} is determined to be a GitHub Org for orgname '{}' - finding related GitHub Repo".format(repo_url,self.orgname))
                 self.project_org = repo_url
-                self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
+                try:
+                    self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
+                    logging.info("{} is determined to be the associated GitHub Repo for GitHub Org {} for orgname '{}'".format(self.__repo_url,self.project_org,self.orgname))
+                except ValueError as e:
+                    logging.warn(e)
+                    self.__repo_url = repo_url
             else:
+                logging.info("{} is determined to be something else".format(repo_url))
                 self.__repo_url = repo_url
             
             self._validRepo = True
 
     def _isGitHubRepo(self, url):
-        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and urlparse(url).path.split("/") == 3
+        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and len(urlparse(url).path.split("/")) == 3
 
     def _isGitHubOrg(self, url):
-        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and urlparse(url).path.split("/") == 2
+        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and len(urlparse(url).path.split("/")) == 2
 
     def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
         if not self._isGitHubOrg(url):
             return url
+        
+        while True:
+            try:
+                g = Github(login_or_token=os.environ['GITHUB_TOKEN'], per_page=1000)
+                return g.get_organization(urlparse(url).path.split("/")[1]).get_repos()[0].html_url if g.get_organization(urlparse(url).path.split("/")[1]).get_repos().totalCount > 0 else None
+            except RateLimitExceededException:
+                logging.info("Sleeping until we get past the API rate limit....")
+                time.sleep(g.rate_limiting_resettime-now())
+            except GithubException as e:
+                if e.status == 502:
+                    logging.info("Server error - retrying...")
+                else:
+                    raise ValueError(e.data)
+            except socket.timeout:
+                logging.info("Server error - retrying...")
 
-        apiEndPoint = 'https://api.github.com/orgs{}'.format(urlparse(url).path)
+        apiEndPoint = 'https://api.github.com/orgs{}/repos'.format(urlparse(url).path)
         session = requests_cache.CachedSession('githubapi')
         with session.get(apiEndPoint) as endpointResponse:
-            response = endpointResponse.json()
-            if not response.ok:
-                raise ValueError("Cannot find repos under GitHub Organization {}".format(url))
-            
-            return response[0]["html_url"]
+            if not endpointResponse.ok or len(endpointResponse.json()) == 0:
+                raise ValueError("Cannot find repos under GitHub Organization '{}' for orgname '{}'".format(url,self.orgname))
+             
+            return endpointResponse.json()[0]["html_url"]
+
+    @property
+    def linkedin(self):
+        return self.__linkedin
+
+    @linkedin.setter
+    def linkedin(self, linkedin):
+        if not linkedin:
+            self.__linkedin = None
+
+        # See if this is just the short form part of the LinkedIn URL
+        if linkedin.startsWith('company'):
+            self.__linkedin = "https://www.linkedin.com/{}".format(linkedin)
+        # If it is a URL, make sure it's properly formed
+        if ( urlparse(linkedin).netloc == 'linkedin.com' or urlparse(linkedin).netloc == 'www.linkedin.com' ):
+            self.__linkedin = "https://www.linkedin.com{}".format(urlparse(linkedin).path)
 
     @property
     def crunchbase(self):
@@ -89,9 +133,10 @@ class Member:
 
     @crunchbase.setter
     def crunchbase(self, crunchbase):
-        if crunchbase and ( urlparse(crunchbase).netloc == 'crunchbase.com' or urlparse(crunchbase).netloc == 'www.crunchbase.com' ):
+        if crunchbase and ( urlparse(crunchbase).netloc == 'crunchbase.com' or urlparse(crunchbase).netloc == 'www.crunchbase.com' ) and urlparse(crunchbase).path.split("/")[1] == 'organization':
             self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
-
+        else:
+            self.__crunchbase = None
     @property
     def website(self):
         return self.__website
@@ -112,11 +157,11 @@ class Member:
 
     @property
     def logo(self):
-        return self.__logo.filename(self.orgname) if type(self.__logo) is SVGLogo else ""
+        return self.__logo.filename(self.orgname) if type(self.__logo) is SVGLogo else None
 
     @logo.setter
     def logo(self, logo):
-        if logo is None:
+        if logo is None or logo == '':
             self._validLogo = False
             raise ValueError("Member.logo must be not be blank for '{orgname}'".format(orgname=self.orgname))
         
@@ -188,7 +233,7 @@ class Member:
 
         for i in allowedKeys:
             if i == 'name':
-                returnentry['name'] = self.orgname + self.entrysuffix
+                returnentry['name'] = "{}{}".format(self.orgname,self.entrysuffix)
             elif i == 'homepage_url':
                 returnentry['homepage_url'] = self.website
             elif i == 'repo_url' and ( not self.repo_url or self.repo_url == ''):
@@ -197,12 +242,18 @@ class Member:
                 continue
             elif i == 'second_path' and len(self.second_path) == 0:
                 continue
+            elif i == 'extra' and len(self.extra) == 0:
+                continue
+            elif i == 'organization' and len(self.organization) == 0:
+                continue
             elif hasattr(self,i):
                 returnentry[i] = getattr(self,i)
 
         if not self.crunchbase:
             logging.getLogger().info("No Crunchbase entry for '{}' - specifying orgname instead".format(self.orgname))
-            returnentry['organization'] = {'name':self.orgname}
+            returnentry['organization'] = {}
+            returnentry['organization']['name'] = self.orgname
+            returnentry['organization']['linkedin'] = self.linkedin
             del returnentry['crunchbase']
 
         return returnentry

@@ -20,7 +20,8 @@ import cairo
 
 class SVGLogo:
 
-    __contents = ''    
+    __contents = ''
+    __filename = None
 
     def __init__(self, contents = None, filename = None, url = None, name = None):
         if contents:
@@ -28,6 +29,7 @@ class SVGLogo:
         elif filename:
             with open(filename,'w') as f:
                 self.__contents = f.read()
+                self.__filename = filename
         elif url:
             session = requests.Session()
             retry = Retry(backoff_factor=0.5)
@@ -70,7 +72,7 @@ class SVGLogo:
         return self.__contents
 
     def filename(self, name):
-        return "{}.svg".format(slugify(os.path.splitext(name)[0],separator='_'))
+        return self.__filename if self.__filename else "{}.svg".format(slugify(os.path.splitext(name)[0],separator='_'))
 
     def save(self, name, path = './'):
         filename = self.filename(name)
