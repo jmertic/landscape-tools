@@ -539,6 +539,29 @@ class TestLFXMembers(unittest.TestCase):
         self.assertIsNone(members.members[1].twitter)
 
     @responses.activate
+    def testLoadDataNormalizeMembershipName3(self):
+        members = LFXMembers(loadData = False)
+        responses.add(
+            method=responses.GET,
+            url=members.endpointURL.format(members.project),
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Silver Membership - MPSF","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            )
+
+        members = LFXMembers()
+        self.assertEqual(members.members[0].orgname,"ConsenSys AG")
+        self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
+        self.assertEqual(members.members[0].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg")
+        self.assertEqual(members.members[0].membership,"Silver Membership - MPSF")
+        self.assertEqual(members.members[0].website,"https://consensys.net/")
+        self.assertIsNone(members.members[0].twitter)
+        self.assertEqual(members.members[1].orgname,"Hitachi, Ltd.")
+        self.assertIsNone(members.members[1].crunchbase)
+        self.assertEqual(members.members[1].logo,"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg")
+        self.assertEqual(members.members[1].membership,"Premier Membership")
+        self.assertEqual(members.members[1].website,"https://hitachi-systems.com/")
+        self.assertIsNone(members.members[1].twitter)
+    
+    @responses.activate
     def testLoadDataMissingWebsite(self):
         members = LFXMembers(loadData = False)
         responses.add(
