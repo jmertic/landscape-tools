@@ -45,41 +45,43 @@ class LandscapeOutput:
     _itemsUpdated = 0
     _itemsErrors = 0
 
-    def __init__(self, config: type[Config] = None, resetCategory = False):
+    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False):
         self.processConfig(config)
 
-        with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
-            self.landscape = ruamel.yaml.YAML().load(fileobject)
-            found = False
-            if self.landscape and self.landscape['landscape']:
-                for x in self.landscape['landscape']:
-                    if x['name'] == self.landscapeCategory:
-                        self.landscapeItems = x['subcategories']
-                        found = True
-                        continue
-            else:
-                self.landscape = {
-                    'landscape': [{
-                        'category': None,
-                        'name': self.landscapeCategory,
-                        'subcategories': []
-                    }]
+        if not newLandscape:
+            with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
+                self.landscape = ruamel.yaml.YAML().load(fileobject)
+
+        found = False
+        if self.landscape and 'landscape' in self.landscape:
+            for x in self.landscape['landscape']:
+                if x['name'] == self.landscapeCategory:
+                    self.landscapeItems = x['subcategories']
+                    found = True
+                    continue
+        else:
+            self.landscape = {
+                'landscape': [{
+                    'category': None,
+                    'name': self.landscapeCategory,
+                    'subcategories': []
+                }]
+            }
+    
+        if not found or resetCategory:
+            self.landscapeItems = []
+            for landscapeSubcategory in self.landscapeSubcategories:
+                subcategory = {
+                    "subcategory": None,
+                    "name": landscapeSubcategory['category'],
+                    "items" : []
                 }
-        
-            if not found or resetCategory:
-                self.landscapeItems = []
-                for landscapeSubcategory in self.landscapeSubcategories:
-                    subcategory = {
-                        "subcategory": None,
-                        "name": landscapeSubcategory['category'],
-                        "items" : []
-                    }
-                    if subcategory not in self.landscapeItems:
-                        self.landscapeItems.append(subcategory)
-                 
-                for x in self.landscape['landscape']:
-                    if x['name'] == self.landscapeCategory:
-                        x['subcategories'] = self.landscapeItems
+                if subcategory not in self.landscapeItems:
+                    self.landscapeItems.append(subcategory)
+             
+            for x in self.landscape['landscape']:
+                if x['name'] == self.landscapeCategory:
+                    x['subcategories'] = self.landscapeItems
     
     def processConfig(self, config: type[Config] = None):
         if config:

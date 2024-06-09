@@ -119,13 +119,13 @@ class Member:
     def linkedin(self, linkedin):
         if not linkedin:
             self.__linkedin = None
-
-        # See if this is just the short form part of the LinkedIn URL
-        if linkedin.startsWith('company'):
-            self.__linkedin = "https://www.linkedin.com/{}".format(linkedin)
-        # If it is a URL, make sure it's properly formed
-        if ( urlparse(linkedin).netloc == 'linkedin.com' or urlparse(linkedin).netloc == 'www.linkedin.com' ):
-            self.__linkedin = "https://www.linkedin.com{}".format(urlparse(linkedin).path)
+        else:
+            # See if this is just the short form part of the LinkedIn URL
+            if linkedin.startswith('company'):
+                self.__linkedin = "https://www.linkedin.com/{}".format(linkedin)
+            # If it is a URL, make sure it's properly formed
+            if ( urlparse(linkedin).netloc == 'linkedin.com' or urlparse(linkedin).netloc == 'www.linkedin.com' ):
+                self.__linkedin = "https://www.linkedin.com{}".format(urlparse(linkedin).path)
 
     @property
     def crunchbase(self):
