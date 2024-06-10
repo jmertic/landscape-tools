@@ -88,12 +88,12 @@ class SVGLogo:
 
     def autocrop(self, title=''):
         postJson = {
-            'svg': self.__contents.decode("utf-8"), 
+            'svg': self.__contents, 
             'title': title
         }
         x = requests.post("https://autocrop.cncf.io/autocrop", json=postJson)
         response = x.json()
         if response['success']:
-            self.__contents = response['result'].encode("utf-8")
+            self.__contents = response['result']
         else:
             raise RuntimeError("Autocrop failed: {}".format(response['error']))
