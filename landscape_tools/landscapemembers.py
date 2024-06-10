@@ -5,6 +5,8 @@
 #
 # encoding=utf8
 
+import logging
+
 ## third party modules
 import ruamel.yaml
 import requests
@@ -26,7 +28,8 @@ class LandscapeMembers(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading other landscape members data--")
+        logger = logging.getLogger()
+        logger.info("Loading other landscape members data")
 
         response = requests.get(self.landscapeListYAML)
         landscapeList = ruamel.yaml.YAML().load(response.content)
@@ -34,8 +37,8 @@ class LandscapeMembers(Members):
         for landscape in landscapeList['landscapes']:
             if landscape['name'] in self.skipLandscapes:
                 continue
-
-            print("Loading "+landscape['name']+"...")
+        
+            logger.info("Loading {}...".format(landscape['name']))
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))

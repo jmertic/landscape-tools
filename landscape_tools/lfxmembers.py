@@ -44,7 +44,7 @@ class LFXMembers(Members):
                 try:
                     member.website = record['Website']
                 except ValueError as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 try:
                     member.logo = record['Logo'] if 'Logo' in record else None
                 except ValueError as e:
@@ -52,19 +52,19 @@ class LFXMembers(Members):
                     try:
                         member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 try:
                     member.crunchbase = record['CrunchBaseURL'] if 'CrunchBaseURL' in record else None
                 except ValueError as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 try:
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except ValueError as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 try:
                     member.linkedin = record['LinkedInURL'] if 'LinkedInURL' in record else None
                 except ValueError as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 self.members.append(member)
 
     def find(self, org, website, membership):

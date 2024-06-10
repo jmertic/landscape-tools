@@ -291,9 +291,9 @@ class Member:
                 key = "orgname"
             try:
                 if (not hasattr(membertooverlay,key) or not getattr(membertooverlay,key)): 
-                    print("...Overlay "+key)
-                    print(".....Old Value - '{}'".format(getattr(membertooverlay,key) if hasattr(membertooverlay,key) else'empty'))
-                    print(".....New Value - '{}'".format(value if value else 'empty'))
+                    logging.getLogger().info("...Overlay "+key)
+                    logging.getLogger().info(".....Old Value - '{}'".format(getattr(membertooverlay,key) if hasattr(membertooverlay,key) else'empty'))
+                    logging.getLogger().info(".....New Value - '{}'".format(value if value else 'empty'))
                     setattr(membertooverlay, key, value)
             except ValueError as e:
                 print(e)
