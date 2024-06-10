@@ -41,7 +41,7 @@ class LFXProjects(Members):
         logger = logging.getLogger()
         logger.info("Loading LFX Projects data")
 
-        session = requests_cache.CachedSession('landscape')
+        session = requests_cache.CachedSession()
         with session.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()
             for record in memberList['Data']:
@@ -128,7 +128,7 @@ class LFXProjects(Members):
                 return member
 
     def lookupParentProjectNameBySlug(self, slug):
-        session = requests_cache.CachedSession('landscape')
+        session = requests_cache.CachedSession()
         if slug:
             with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
                 parentProject = endpointResponse.json()
