@@ -74,11 +74,11 @@ class LFXProjects(Members):
                     try:
                         member.website = record['RepositoryURL'] if 'RepositoryURL' in record else None
                     except (ValueError,KeyError) as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 try:
                     member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
                 except (ValueError,KeyError) as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 try:
                     member.parent_slug = record['ParentSlug'] 
                     if self.addParentProject:
@@ -86,7 +86,7 @@ class LFXProjects(Members):
                         if parentName:
                             second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
                 except (ValueError,KeyError) as e:
-                    logger.warn(e)
+                    logger.warning(e)
                     member.parent_slug = self.project
                 try:
                     member.logo = record['ProjectLogo'] if 'ProjectLogo' in record else None
@@ -95,29 +95,29 @@ class LFXProjects(Members):
                     try:
                         member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else self.defaultCrunchbase
                 try:
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
-                    logger.warn(e)
+                    logger.warning(e)
                 if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager']:
                     try:
                         second_path.append('PMO Managed / All')
                     except (ValueError,KeyError) as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':
                     try:
                         second_path.append('Industry / {}'.format(record['IndustrySector'].replace("/",":")))
                     except (ValueError,KeyError) as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 if self.addTechnologySector and 'TechnologySector' in record and record['TechnologySector'] != '':
                     try:
                         sectors = record['TechnologySector'].split(";")
                         for sector in sectors:
                             second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
                     except (ValueError,KeyError) as e:
-                        logger.warn(e)
+                        logger.warning(e)
                 member.extra = extra
                 member.second_path = second_path
                 self.members.append(member)
@@ -134,7 +134,7 @@ class LFXProjects(Members):
                 parentProject = endpointResponse.json()
                 if len(parentProject['Data']) > 0: 
                     return parentProject['Data'][0]["Name"]
-                logging.getLogger().warn("Couldn't find project for slug '{}'".format(slug)) 
+                logging.getLogger().warning("Couldn't find project for slug '{}'".format(slug)) 
         
         return False
 
