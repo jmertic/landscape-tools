@@ -86,6 +86,19 @@ class SVGLogo:
     def isValid(self):
         return self.__contents.find('base64') == -1 and self.__contents.find('<text') == -1 and self.__contents.find('<image') == -1 and self.__contents.find('<tspan') == -1
 
+    def addCaption(self, caption="", title=""):
+        postJson = {
+            'svg': self.__contents, 
+            'title': title,
+            'caption': caption
+        }
+        x = requests.post("https://autocrop.cncf.io/autocrop", json=postJson)
+        response = x.json()
+        if response['success']:
+            self.__contents = response['result']
+        else:
+            raise RuntimeError("Adding caption failed: {}".format(response['error']))
+
     def autocrop(self, title=''):
         postJson = {
             'svg': self.__contents, 

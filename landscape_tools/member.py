@@ -16,7 +16,7 @@ from url_normalize import url_normalize
 import validators
 import requests
 import requests_cache
-from github import Github, GithubException, RateLimitExceededException
+from github import Github, GithubException, RateLimitExceededException, Auth
 
 from landscape_tools.svglogo import SVGLogo
 
@@ -90,7 +90,7 @@ class Member:
         
         while True:
             try:
-                g = Github(login_or_token=os.environ['GITHUB_TOKEN'], per_page=1000)
+                g = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']), per_page=1000)
                 return g.get_organization(urlparse(url).path.split("/")[1]).get_repos()[0].html_url if g.get_organization(urlparse(url).path.split("/")[1]).get_repos().totalCount > 0 else None
             except RateLimitExceededException:
                 logging.info("Sleeping until we get past the API rate limit....")

@@ -21,7 +21,6 @@ class LFXMembers(Members):
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active,At Risk' 
 
     def __init__(self, project = None, loadData = True):
-
         if project:
             self.project = project
         super().__init__(loadData)

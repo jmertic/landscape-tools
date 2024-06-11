@@ -80,7 +80,7 @@ class LFXProjects(Members):
                 except (ValueError,KeyError) as e:
                     logger.warn(e)
                 try:
-                    member.parent_slug = record['ParentSlug'] if 'ParentSlug' in record else None
+                    member.parent_slug = record['ParentSlug'] 
                     if self.addParentProject:
                         parentName = self.lookupParentProjectNameBySlug(member.parent_slug)
                         if parentName:
@@ -148,7 +148,7 @@ class LFXProjects(Members):
                 if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
                     members.append(member)
             elif repo_url:
-                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website or self.repo_url == repo_url):
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website or member.repo_url == repo_url):
                     members.append(member)
             else:
                 if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website ):

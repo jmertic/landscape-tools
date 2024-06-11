@@ -62,8 +62,6 @@ class LandscapeMembers(Members):
                 if membershipKey in category['name']:
                     for subcategory in category['subcategories']:
                         for item in subcategory['items']:
-                            if not item.get('crunchbase'):
-                                item['crunchbase'] = ''
                             member = Member()
                             for key, value in item.items():
                                 try:
@@ -71,14 +69,8 @@ class LandscapeMembers(Members):
                                         setattr(member, key, value)
                                 except ValueError as e:
                                     pass
-                            try:
-                                member.membership = ''
-                            except ValueError as e:
-                                pass
-                            try:
-                                member.orgname = item['name']
-                            except ValueError as e:
-                                pass
+                            member.orgname = item['name'] if 'name' in item else None
+                            member.membership = ''
                             try:
                                 member.website = item['homepage_url']
                             except ValueError as e:
@@ -88,7 +80,7 @@ class LandscapeMembers(Members):
                             except ValueError as e:
                                 pass
                             try:
-                                member.crunchbase = item['crunchbase']
+                                member.crunchbase = item['crunchbase'] if 'crunchbase' in item else None
                             except ValueError as e:
                                 pass
                             self.members.append(member)
