@@ -90,7 +90,10 @@ class Member:
         
         while True:
             try:
-                g = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']), per_page=1000)
+                if 'GITHUB_TOKEN' in os.environ:
+                    g = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']), per_page=1000)
+                else:
+                    g = Github(per_page=1000)
                 return g.get_organization(urlparse(url).path.split("/")[1]).get_repos()[0].html_url if g.get_organization(urlparse(url).path.split("/")[1]).get_repos().totalCount > 0 else None
             except RateLimitExceededException:
                 logging.info("Sleeping until we get past the API rate limit....")
