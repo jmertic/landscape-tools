@@ -39,7 +39,7 @@ class LFXProjects(Members):
 
     def loadData(self):
         logger = logging.getLogger()
-        logger.info("Loading LFX Projects data")
+        logger.info("Loading LFX Projects data for {}".format(self.project))
 
         session = requests_cache.CachedSession()
         with session.get(self.endpointURL.format(self.project)) as endpointResponse:

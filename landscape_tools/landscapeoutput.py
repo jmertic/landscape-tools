@@ -8,19 +8,11 @@
 ## built in modules
 import csv
 import re
-import os
 import logging
-import unicodedata
-import tempfile
-from pathlib import Path
-from slugify import slugify
+import os
 
 ## third party modules
 import ruamel.yaml
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import cairo
 
 from landscape_tools.config import Config
 
@@ -32,6 +24,7 @@ class LandscapeOutput:
     missingcsvfile = 'missing.csv'
     _missingcsvfilewriter = None
     hostedLogosDir = 'hosted_logos'
+    memberSuffix = ''
 
     landscapeCategory = 'LF Member Company'
     landscapeSubcategories = [
@@ -45,9 +38,8 @@ class LandscapeOutput:
     _itemsUpdated = 0
     _itemsErrors = 0
 
-    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False):
-        self.processConfig(config)
-
+    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False, baseDir = None):
+        self.processConfig(config, baseDir)
         if not newLandscape:
             with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
                 self.landscape = ruamel.yaml.YAML().load(fileobject)
@@ -83,14 +75,14 @@ class LandscapeOutput:
                 if x['name'] == self.landscapeCategory:
                     x['subcategories'] = self.landscapeItems
     
-    def processConfig(self, config: type[Config] = None):
+    def processConfig(self, config: type[Config] = None, baseDir = "."):
         if config:
             self.landscapeCategory = config.landscapeCategory
             self.landscapeSubcategories = config.landscapeSubcategories
-            self.landscapefile = config.landscapefile
+            self.landscapefile = os.path.join(baseDir,config.landscapefile)
             self.missingcsvfile = config.missingcsvfile
-            self.hostedLogosDir = config.hostedLogosDir
-            self.memberSuffix = config.memberSuffix
+            self.hostedLogosDir = os.path.join(baseDir,config.hostedLogosDir)
+            self.memberSuffix = config.memberSuffix if config.view == 'members' else self.memberSuffix
 
     def writeMissing(self, name, homepage_url):
         if self._missingcsvfilewriter is None:
@@ -136,7 +128,7 @@ class LandscapeOutput:
                         landscapeItemSubcategory['items'].append(member.toLandscapeItemAttributes())
                     break
             if not foundCategory:
-                logger.warn("Not adding '{}' to Landscape - Membership Level '{}' not defined".format(member.orgname,member.membership))
+                logger.warn("Not adding '{}' to Landscape - Category '{}' not defined".format(member.orgname,member.membership))
                 self.writeMissing(
                     member.orgname,
                     member.website
@@ -170,13 +162,13 @@ class LandscapeOutput:
                 'subcategories': self.landscapeItems
                 })
  
-        landscapefileoutput = Path(self.landscapefile)
-        ryaml = ruamel.yaml.YAML(typ='rt')
-        ryaml.Representer.add_representer(str,self._str_presenter)
-        ryaml.indent(mapping=2, sequence=4, offset=2)
-        ryaml.default_flow_style = False
-        ryaml.allow_unicode = True
-        ryaml.width = 160
-        ryaml.preserve_quotes = False
-        ryaml.dump(self.landscape,landscapefileoutput, transform=self._removeNulls)
+        with open(self.landscapefile, 'w+', encoding="utf8", errors='ignore') as fileobject: 
+            ryaml = ruamel.yaml.YAML(typ='rt')
+            ryaml.Representer.add_representer(str,self._str_presenter)
+            ryaml.indent(mapping=2, sequence=4, offset=2)
+            ryaml.default_flow_style = False
+            ryaml.allow_unicode = True
+            ryaml.width = 160
+            ryaml.preserve_quotes = False
+            ryaml.dump(self.landscape, fileobject, transform=self._removeNulls)
 
