@@ -28,7 +28,6 @@ jobs:
       uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
       with:
         egress-policy: audit
-
     - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
     - name: Set up Python
       uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
@@ -36,17 +35,23 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-        pip install --no-deps --require-hashes -r requirements.txt
+        pip install poetry
+        poetry install --with test
     - name: Run tests
       run: |
-        coverage run tests.py -b
-        coverage xml
+        poetry run coverage run tests.py -b
+        poetry run coverage xml
     - name: Save debug.log file
       uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       if: always()
       with:
         name: debug-log 
         path: ./debug.log
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@125fc84a9a348dbcf27191600683ec096ec9021c # v4.4.1
       with:
