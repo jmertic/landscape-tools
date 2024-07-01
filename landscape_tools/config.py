@@ -38,21 +38,10 @@ class Config:
     view = 'members' 
 
     def __init__(self, config_file = '', view = None):
-        if view:
-            self.view = view if view in ['projects','members'] else self.view
-        
         data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(config_file)
-
-        try:
-            self.project = data_loaded['project']
-        except KeyError:
-            raise ValueError("'project' not defined in config file")
-        
-        try:
-            self.slug = data_loaded['slug']
-        except KeyError:
-            raise ValueError("'slug' not defined in config file")
-        
+        self.view = view if view in ['projects','members'] else self.view
+        self.project = data_loaded['project'] if 'project' in data_loaded else ValueError("'project' not defined in config file") 
+        self.slug = data_loaded['slug'] if 'slug' in data_loaded else raise ValueError("'slug' not defined in config file")
         self.landscapeProjectsCategory = data_loaded['landscapeProjectsCategory'] if 'landscapeProjectsCategory' in data_loaded else Config.landscapeProjectsCategory
         self.landscapeProjectsSubcategories = data_loaded['landscapeProjectsSubcategories'] if 'landscapeProjectsSubcategories' in data_loaded else Config.landscapeProjectsSubcategories
         self.landscapeMembersCategory = data_loaded['landscapeMembersCategory'] if 'landscapeMembersCategory' in data_loaded else Config.landscapeMembersCategory

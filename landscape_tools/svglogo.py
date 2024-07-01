@@ -50,19 +50,19 @@ class SVGLogo:
            with tempfile.TemporaryFile() as fp:
                 with cairo.SVGSurface(fp, width, height) as surface:
                     Context = cairo.Context(surface)
-                    Context.set_source_rgb(0,0,0)
-                    Context.set_font_size(60)
-                    Context.select_font_face(
+                    context.set_source_rgb(0,0,0)
+                    context.set_font_size(60)
+                    context.select_font_face(
                         "Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-                    Context.move_to(0,50)
+                    context.move_to(0,50)
                     parts = name.split(" ")
                     n = 2
                     for part in parts:
-                        Context.show_text(part)
-                        Context.move_to(0,n*60)
+                        context.show_text(part)
+                        context.move_to(0,n*60)
                         n += 1
-                    Context.stroke()
-                    Context.save()
+                    context.stroke()
+                    context.save()
 
                 fp.seek(0)
                 self.__contents = fp.read().decode('utf-8')
