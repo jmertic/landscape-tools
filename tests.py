@@ -39,6 +39,7 @@ landscapeMemberClasses:
    - name: Associate Membership
      category: Associate
 project: a09410000182dD2AAI # Academy Software Foundation
+slug: aswf
 landscapeMemberCategory: ASWF Member Company
 memberSuffix: " (help)"
 """
@@ -46,20 +47,22 @@ memberSuffix: " (help)"
         tmpfilename.write(testconfigfilecontents)
         tmpfilename.close()
 
-        config = Config(tmpfilename.name)
+        with open(tmpfilename.name) as fp:
+            config = Config(fp)
 
-        self.assertEqual(config.project,"a09410000182dD2AAI")
-        self.assertEqual(config.landscapeCategory,"ASWF Member Company")
-        self.assertEqual(config.landscapefile,"landscape.yml")
-        self.assertEqual(config.missingcsvfile,"missing.csv")
-        self.assertEqual(config.landscapeSubcategories[0]['name'],"Premier Membership")
-        self.assertEqual(config.memberSuffix," (help)")
+            self.assertEqual(config.project,"a09410000182dD2AAI")
+            self.assertEqual(config.landscapeCategory,"ASWF Member Company")
+            self.assertEqual(config.landscapefile,"landscape.yml")
+            self.assertEqual(config.missingcsvfile,"missing.csv")
+            self.assertEqual(config.landscapeSubcategories[0]['name'],"Premier Membership")
+            self.assertEqual(config.memberSuffix," (help)")
 
         os.unlink(tmpfilename.name)
 
     def testLoadConfigMissingCsvFileLandscapeFile(self):
         testconfigfilecontents = """
 project: a09410000182dD2AAI # Academy Software Foundation
+slug: aswf
 landscapefile: foo.yml
 missingcsvfile: foo.csv
 """
@@ -67,33 +70,37 @@ missingcsvfile: foo.csv
         tmpfilename.write(testconfigfilecontents)
         tmpfilename.close()
 
-        config = Config(tmpfilename.name)
+        with open(tmpfilename.name) as fp:
+            config = Config(fp)
 
-        self.assertEqual(config.project,"a09410000182dD2AAI")
-        self.assertEqual(config.landscapefile,"foo.yml")
-        self.assertEqual(config.missingcsvfile,"foo.csv")
+            self.assertEqual(config.project,"a09410000182dD2AAI")
+            self.assertEqual(config.landscapefile,"foo.yml")
+            self.assertEqual(config.missingcsvfile,"foo.csv")
 
         os.unlink(tmpfilename.name)
+    
     def testLoadConfigDefaults(self):
         testconfigfilecontents = """
 project: a09410000182dD2AAI # Academy Software Foundation
+slug: aswf
 """
         tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
         tmpfilename.write(testconfigfilecontents)
         tmpfilename.close()
 
-        config = Config(tmpfilename.name)
+        with open(tmpfilename.name) as fp:
+            config = Config(fp)
 
-        self.assertEqual(config.landscapeCategory,'Members')
-        self.assertEqual(config.landscapeSubcategories,[
-            {"name": "Premier Membership", "category": "Premier"},
-            {"name": "General Membership", "category": "General"},
-        ])
-        self.assertEqual(config.landscapefile,'landscape.yml')
-        self.assertEqual(config.missingcsvfile,'missing.csv')
-        self.assertEqual(config.hostedLogosDir,'hosted_logos')
-        self.assertIsNone(config.memberSuffix)
-        self.assertEqual(config.project,"a09410000182dD2AAI")
+            self.assertEqual(config.landscapeCategory,'Members')
+            self.assertEqual(config.landscapeSubcategories,[
+                {"name": "Premier Membership", "category": "Premier"},
+                {"name": "General Membership", "category": "General"},
+            ])
+            self.assertEqual(config.landscapefile,'landscape.yml')
+            self.assertEqual(config.missingcsvfile,'missing.csv')
+            self.assertEqual(config.hostedLogosDir,'hosted_logos')
+            self.assertIsNone(config.memberSuffix)
+            self.assertEqual(config.project,"a09410000182dD2AAI")
 
         os.unlink(tmpfilename.name)
 
@@ -214,12 +221,13 @@ class TestMember(unittest.TestCase):
         ]
 
         for invalidLogo in invalidLogos:
-            member = Member()
-            member.orgname = 'test'
-            with self.assertRaises(ValueError,msg="Member.logo for test must be an svg file - '{logo}' provided".format(logo=invalidLogo)) as ctx:
-                member.logo = invalidLogo
+            with patch("builtins.open", mock_open(read_data="<text")) as mock_file:
+                member = Member()
+                member.orgname = 'test'
+                with self.assertRaises(ValueError,msg="Member.logo for test must be an svg file - '{logo}' provided".format(logo=invalidLogo)) as ctx:
+                    member.logo = invalidLogo
 
-            self.assertFalse(member._validLogo)
+                self.assertFalse(member._validLogo)
 
     def testTwitterValid(self):
         validTwitters = [
@@ -942,8 +950,8 @@ class TestLandscapeOutput(unittest.TestCase):
 
     def testNewLandscape(self):
         config = Config()
-        config.landscapeCategory = 'test me'
-        config.landscapeSubcategories = [
+        config.landscapeMembersCategory = 'test me'
+        config.landscapeMembersSubcategories = [
             {"name": "Good Membership", "category": "Good"},
             {"name": "Bad Membership", "category": "Bad"}
             ]
@@ -975,8 +983,8 @@ landscape:
             tmpfilename.flush()
 
             config = Config()
-            config.landscapeCategory = 'test me'
-            config.landscapeSubcategories = [
+            config.landscapeMembersCategory = 'test me'
+            config.landscapeMembersSubcategories = [
                 {"name": "Good Membership", "category": "Good"},
                 {"name": "Bad Membership", "category": "Bad"}
                 ]
@@ -1010,8 +1018,8 @@ landscape:
             tmpfilename.flush()
 
             config = Config()
-            config.landscapeCategory = 'test me'
-            config.landscapeSubcategories = [
+            config.landscapeMembersCategory = 'test me'
+            config.landscapeMembersSubcategories = [
                 {"name": "Good Membership", "category": "Good"},
                 {"name": "Bad Membership", "category": "Bad"}
                 ]
@@ -1031,8 +1039,8 @@ landscape:
             tmpfilename.flush()
 
             config = Config()
-            config.landscapeCategory = 'test me'
-            config.landscapeSubcategories = [
+            config.landscapeMembersCategory = 'test me'
+            config.landscapeMembersSubcategories = [
                 {"name": "Good Membership", "category": "Good"},
                 {"name": "Bad Membership", "category": "Bad"}
                 ]

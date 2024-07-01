@@ -38,7 +38,7 @@ class LandscapeOutput:
     _itemsUpdated = 0
     _itemsErrors = 0
 
-    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False, baseDir = None):
+    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False, baseDir = "."):
         self.processConfig(config, baseDir)
         if not newLandscape:
             with open(self.landscapefile, 'r', encoding="utf8", errors='ignore') as fileobject: 
