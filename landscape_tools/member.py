@@ -176,7 +176,7 @@ class Member:
 
         if not self.__logo.isValid():
             self._validLogo = False
-            raise ValueError("Member.logo for '{orgname}' invalid format".format(logo=logo,orgname=self.orgname))
+            raise ValueError("Member.logo for '{orgname}' invalid format".format(orgname=self.orgname))
 
         self._validLogo = True
     
