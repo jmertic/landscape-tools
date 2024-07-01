@@ -55,7 +55,6 @@ class Member:
         if repo_url is not None:
             repo_url = repo_url.rstrip("/")
             repo_url = url_normalize(repo_url, default_scheme='https')
-            urlpath = urlparse(repo_url,scheme='http').path[1:]
 
             if self._isGitHubRepo(repo_url):
                 logging.info("{} is determined to be a GitHub Repo for orgname '{}'".format(repo_url,self.orgname))

@@ -145,13 +145,13 @@ class LFXProjects(Members):
         members = []
         for member in self.members:
             if membership:
-                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website) and member.membership == membership:
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == normalizedwebsite ) and member.membership == membership:
                     members.append(member)
             elif repo_url:
-                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website or member.repo_url == repo_url):
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == normalizedwebsite or member.repo_url == repo_url):
                     members.append(member)
             else:
-                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == website ):
+                if ( self.normalizeCompany(member.orgname) == normalizedorg or member.website == normalizedwebsite ):
                     members.append(member)
                 
         return members

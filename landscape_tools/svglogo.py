@@ -46,7 +46,6 @@ class SVGLogo:
                 self.__contents = r.content.decode('utf-8')
         elif name:
            width = len(name) * 40
-           x = width / 2
            height = len(name.split(" ")) * 80 
            with tempfile.TemporaryFile() as fp:
                 with cairo.SVGSurface(fp, width, height) as surface:

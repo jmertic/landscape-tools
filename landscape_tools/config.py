@@ -45,12 +45,12 @@ class Config:
 
         try:
             self.project = data_loaded['project']
-        except KeyError as e:
+        except KeyError:
             raise ValueError("'project' not defined in config file")
         
         try:
             self.slug = data_loaded['slug']
-        except KeyError as e:
+        except KeyError:
             raise ValueError("'slug' not defined in config file")
         
         self.landscapeProjectsCategory = data_loaded['landscapeProjectsCategory'] if 'landscapeProjectsCategory' in data_loaded else Config.landscapeProjectsCategory

@@ -50,7 +50,7 @@ class LandscapeOutput:
                 if x['name'] == self.landscapeCategory:
                     self.landscapeItems = x['subcategories']
                     found = True
-                    continue
+                    break
         else:
             self.landscape = {
                 'landscape': [{
