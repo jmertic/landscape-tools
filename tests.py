@@ -18,6 +18,7 @@ import logging
 import json
 
 from landscape_tools.config import Config
+from landscape_tools.cli import Cli
 from landscape_tools.member import Member
 from landscape_tools.members import Members
 from landscape_tools.lfxmembers import LFXMembers
