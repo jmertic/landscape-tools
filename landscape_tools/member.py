@@ -139,6 +139,7 @@ class Member:
             self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
         else:
             self.__crunchbase = None
+
     @property
     def website(self):
         return self.__website

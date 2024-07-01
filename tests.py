@@ -118,6 +118,134 @@ projectewew: a09410000182dD2AAI # Academy Software Foundation
 
         os.unlink(tmpfilename.name)
 
+    def testLoadProjectsConfig(self):
+        testconfigfilecontents = """
+landscapeName: lfenergy
+landscapeMemberClasses:
+  - name: Strategic Membership
+    category: Strategic
+  - name: Premier Membership
+    category: Strategic
+  - name: General Membership
+    category: General
+  - name: Associate Membership
+    category: Associate
+project: a094100001Cb6HaAAJ # LF Energy Foundation
+slug: lfenergy
+landscapeMemberCategory: LF Energy Member
+landscapeProjectsCategory: LF Energy Projects
+landscapeProjectsSubcategories:
+  - name: All
+    category: All
+landscapefile: landscape.yml
+memberSuffix: ' (member)'
+missingcsvfile: missing.csv
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with open(tmpfilename.name) as fp:
+            config = Config(fp,view='projects')
+
+            self.assertEqual(config.project,"a094100001Cb6HaAAJ")
+            self.assertEqual(config.landscapeCategory,"LF Energy Projects")
+            self.assertEqual(config.landscapefile,"landscape.yml")
+            self.assertEqual(config.missingcsvfile,"missing.csv")
+            self.assertEqual(config.landscapeSubcategories[0]['name'],"All")
+            self.assertEqual(config.memberSuffix," (member)")
+
+        os.unlink(tmpfilename.name)
+
+    def testLoadUndefinedConfig(self):
+        testconfigfilecontents = """
+landscapeName: lfenergy
+landscapeMemberClasses:
+  - name: Strategic Membership
+    category: Strategic
+  - name: Premier Membership
+    category: Strategic
+  - name: General Membership
+    category: General
+  - name: Associate Membership
+    category: Associate
+project: a094100001Cb6HaAAJ # LF Energy Foundation
+slug: lfenergy
+landscapeMemberCategory: LF Energy Member
+landscapeProjectsCategory: LF Energy Projects
+landscapeProjectsSubcategories:
+  - name: All
+    category: All
+landscapefile: landscape.yml
+memberSuffix: ' (member)'
+missingcsvfile: missing.csv
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with open(tmpfilename.name) as fp:
+            config = Config(fp,view='undefined')
+            
+            self.assertEqual(config.view,Config.view)
+
+        os.unlink(tmpfilename.name)
+
+    @responses.activate
+    def testLookupSlugByProjectID(self):
+
+        responses.add(
+            method=responses.GET,
+            url='https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug=aswf',
+            json={
+                "Data": [
+                    {
+                        "AutoJoinEnabled": True,
+                        "Description": "The mission of the Academy Software Foundation (ASWF) is to increase the quality and quantity of contributions to the content creation industry’s open source software base; to provide a neutral forum to coordinate cross-project efforts; to provide a common build and test infrastructure; and to provide individuals and organizations a clear path to participation in advancing our open source ecosystem.",
+                        "DisplayOnWebsite": True,
+                        "HasProgramManager": True,
+                        "Industry": [
+                            "Motion Pictures"
+                        ],
+                        "IndustrySector": "Motion Pictures",
+                        "Model": [
+                            "Membership"
+                        ],
+                        "Name": "Academy Software Foundation (ASWF)",
+                        "ProjectID": "a09410000182dD2AAI",
+                        "ProjectLogo": "https://lf-master-project-logos-prod.s3.us-east-2.amazonaws.com/aswf.svg",
+                        "ProjectType": "Project Group",
+                        "RepositoryURL": "https://github.com/academysoftwarefoundation",
+                        "Slug": "aswf",
+                        "StartDate": "2018-08-10",
+                        "Status": "Active",
+                        "TechnologySector": "Visual Effects",
+                        "TestRecord": False,
+                        "Website": "https://www.aswf.io/"
+                    }
+                ],
+                "Metadata": {
+                    "Offset": 0,
+                    "PageSize": 100,
+                    "TotalSize": 1
+                }
+            })
+
+        testconfigfilecontents = """
+slug: aswf
+"""
+        tmpfilename = tempfile.NamedTemporaryFile(mode='w',delete=False)
+        tmpfilename.write(testconfigfilecontents)
+        tmpfilename.close()
+
+        with open(tmpfilename.name) as fp:
+            config = Config(fp)
+
+            self.assertEqual(config.slug,'aswf')
+            self.assertEqual(config.project,"a09410000182dD2AAI")
+
+        os.unlink(tmpfilename.name)
+
 class TestMember(unittest.TestCase):
 
     def testLinkedInValid(self):

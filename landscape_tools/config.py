@@ -19,7 +19,7 @@ import requests_cache
 class Config:
 
     project = None
-    view = 'members' 
+    view = 'members'
     slug = None
     landscapeMembersCategory = 'Members'
     landscapeMembersSubcategories = [
@@ -42,7 +42,7 @@ class Config:
     def __init__(self, config_file: io.TextIOWrapper = None, view = None):
         if config_file:
             data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(config_file)
-            self.view = view if view in ['projects','members'] else self.view
+            self.view = view if self._isValidViewOption(view) else Config.view
             self.slug = data_loaded['slug'] if 'slug' in data_loaded else Config.slug
             self.project = data_loaded['project'] if 'project' in data_loaded else self._lookupProjectFromSlug(self.slug)
             if not self.slug or not self.project:
@@ -62,6 +62,9 @@ class Config:
             self.projectsAddPMOManagedStatus = data_loaded['projectsAddPMOManagedStatus'] if 'projectsAddPMOManagedStatus' in data_loaded else Config.projectsAddPMOManagedStatus
             self.projectsAddParentProject = data_loaded['memberSuffix'] if 'memberSuffix' in data_loaded else Config.memberSuffix
 
+    def _isValidViewOption(self,view):
+        return view in ['projects','members'] 
+
     @property
     def landscapeCategory(self):
         if self.view == 'projects':
@@ -69,16 +72,12 @@ class Config:
         elif self.view == 'members':
             return self.landscapeMembersCategory
 
-        return None
-
     @property
     def landscapeSubcategories(self):
         if self.view == 'projects':
             return self.landscapeProjectsSubcategories
         elif self.view == 'members':
             return self.landscapeMembersSubcategories
-
-        return None
 
     def _lookupProjectFromSlug(self, slug):
         singleSlugEndpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={}' 

@@ -6,6 +6,7 @@
 # encoding=utf8
 
 import logging
+from contextlib import suppress
 
 ## third party modules
 import ruamel.yaml
@@ -42,11 +43,8 @@ class LandscapeMembers(Members):
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
-            try:
+            with suppress(Exception):
                 settingsYaml = ruamel.yaml.YAML().load(response.content) 
-            except:
-                # skip if the yaml file cannot be loaded
-                continue
             # skip landscape if not well formed
             if 'global' not in settingsYaml or settingsYaml['global'] is None or 'membership' not in settingsYaml['global']:
                 continue
@@ -64,25 +62,15 @@ class LandscapeMembers(Members):
                         for item in subcategory['items']:
                             member = Member()
                             for key, value in item.items():
-                                try:
+                                with suppress(ValueError):
                                     if key != 'enduser':
                                         setattr(member, key, value)
-                                except ValueError as e:
-                                    pass
                             member.orgname = item['name'] if 'name' in item else None
                             member.membership = ''
-                            try:
+                            with suppress(ValueError):
                                 member.website = item['homepage_url']
-                            except ValueError as e:
-                                pass
-                            try:
                                 member.logo = self.normalizeLogo(item['logo'],landscape['repo'])
-                            except ValueError as e:
-                                pass
-                            try:
                                 member.crunchbase = item['crunchbase'] if 'crunchbase' in item else None
-                            except ValueError as e:
-                                pass
                             self.members.append(member)
 
     def normalizeLogo(self, logo, landscapeRepo):
