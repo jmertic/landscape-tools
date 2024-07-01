@@ -84,7 +84,7 @@ class Config:
         singleSlugEndpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={}' 
         session = requests_cache.CachedSession()
         if slug:
-            with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
+            with session.get(singleSlugEndpointURL.format(slug)) as endpointResponse:
                 parentProject = endpointResponse.json()
                 if len(parentProject['Data']) > 0: 
                     return parentProject['Data'][0]["ProjectID"]
