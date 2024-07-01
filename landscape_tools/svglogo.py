@@ -49,7 +49,7 @@ class SVGLogo:
            height = len(name.split(" ")) * 80 
            with tempfile.TemporaryFile() as fp:
                 with cairo.SVGSurface(fp, width, height) as surface:
-                    Context = cairo.Context(surface)
+                    context = cairo.Context(surface)
                     context.set_source_rgb(0,0,0)
                     context.set_font_size(60)
                     context.select_font_face(
