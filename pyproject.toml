@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "landscape-tools"
+version = "1.0.0"
+description = "Collection of tools for automating the data management of a landscape"
+authors = ["John Mertic <jmertic@linuxfoundation.org>"]
+readme = "README.md"
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = ">= 3.12"
+requests = "^2.32.3"
+pycairo = "^1.26.0"
+pygithub = "^2.3.0"
+python-slugify = "^8.0.4"
+requests-cache = "^1.2.1"
+ruamel-yaml = "^0.18.6"
+url-normalize = "^1.4.3"
+urllib3 = "^2.2.2"
+validators = "^0.28.3"
+click = "^8.1.7"
+
+[tool.poetry.group.test.dependencies]
+coverage = "^7.5.3"
+responses = "^0.25.3"
+
+[tool.poetry.group.dev.dependencies]
+build = "^1.2.1"
+
+[tool.poetry.scripts]
+landscape_tools = "landscape_tools.cli:Cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
