@@ -260,6 +260,25 @@ class TestMember(unittest.TestCase):
             member.linkedin = validLinkedInURL
             self.assertEqual(member.linkedin,'https://www.linkedin.com/company/1nce')
 
+    def testSetLinkedInNotValidOnEmpty(self):
+        member = Member()
+        member.orgname = 'test'
+        member.linkedin = ''
+        self.assertIsNone(member.linkedin)
+
+    def testSetLinkedNotValid(self):
+        invalidLinkedInURLs = [
+            'https://yahoo.com',
+            'https://www.crunchbase.com/person/johndoe'
+        ]
+
+        for invalidLinkedInURL in invalidLinkedInURLs:
+            member = Member()
+            member.orgname = 'test'
+            with self.assertRaises(ValueError):
+                member.linkedin = invalidLinkedInURL
+            self.assertIsNone(member.linkedin)
+    
     def testSetCrunchbaseValid(self):
         validCrunchbaseURLs = [
             'https://www.crunchbase.com/organization/visual-effects-society'
@@ -276,6 +295,18 @@ class TestMember(unittest.TestCase):
         member.crunchbase = ''
         self.assertIsNone(member.crunchbase)
 
+    def testSetRepoNotValidOnEmpty(self):
+        member = Member()
+        member.orgname = 'test'
+        member.repo_url = ''
+        self.assertIsNone(member.repo_url)
+    
+    def testSetRepoGitlab(self):
+        member = Member()
+        member.orgname = 'test'
+        member.repo_url = 'https://gitlab.com/foo/bar'
+        self.assertEqual(member.repo_url,'https://gitlab.com/foo/bar')
+
     def testSetCrunchbaseNotValid(self):
         invalidCrunchbaseURLs = [
             'https://yahoo.com',
@@ -285,7 +316,8 @@ class TestMember(unittest.TestCase):
         for invalidCrunchbaseURL in invalidCrunchbaseURLs:
             member = Member()
             member.orgname = 'test'
-            member.crunchbase = invalidCrunchbaseURL
+            with self.assertRaises(ValueError):
+                member.crunchbase = invalidCrunchbaseURL
             self.assertIsNone(member.crunchbase)
 
     def testSetWebsiteValid(self):
@@ -298,7 +330,6 @@ class TestMember(unittest.TestCase):
             member = Member()
             member.website = validWebsiteURL['before']
             self.assertEqual(member.website,validWebsiteURL['after'])
-            self.assertTrue(member._validWebsite)
 
     def testSetWebsiteNotValidOnEmpty(self):
         member = Member()
@@ -306,7 +337,7 @@ class TestMember(unittest.TestCase):
         with self.assertRaises(ValueError,msg="Member.website must be not be blank for test") as ctx:
             member.website = ''
 
-        self.assertFalse(member._validWebsite)
+        self.assertIsNone(member.website)
 
     def testSetWebsiteNotValid(self):
         invalidWebsiteURLs = [
@@ -320,7 +351,7 @@ class TestMember(unittest.TestCase):
             with self.assertRaises(ValueError,msg="Member.website for test must be set to a valid website - '{website}' provided".format(website=invalidWebsiteURL)) as ctx:
                 member.website = invalidWebsiteURL
 
-            self.assertFalse(member._validWebsite)
+            self.assertIsNone(member.website)
 
     def testSetLogoValid(self):
         validLogos = [
@@ -333,7 +364,6 @@ class TestMember(unittest.TestCase):
                 member.orgname = 'dog'
                 member.logo = validLogo
                 self.assertEqual(member.logo,validLogo)
-                self.assertTrue(member._validLogo)
 
     def testSetLogoNotValidOnEmpty(self):
         member = Member()
@@ -341,7 +371,7 @@ class TestMember(unittest.TestCase):
         with self.assertRaises(ValueError,msg="Member.logo must be not be blank for test") as ctx:
             member.logo = ''
 
-        self.assertFalse(member._validLogo)
+        self.assertIsNone(member.logo)
 
     def testSetLogoNotValid(self):
         invalidLogos = [
@@ -356,7 +386,7 @@ class TestMember(unittest.TestCase):
                 with self.assertRaises(ValueError,msg="Member.logo for test must be an svg file - '{logo}' provided".format(logo=invalidLogo)) as ctx:
                     member.logo = invalidLogo
 
-                self.assertFalse(member._validLogo)
+                self.assertIsNone(member.logo)
 
     def testTwitterValid(self):
         validTwitters = [
@@ -372,7 +402,6 @@ class TestMember(unittest.TestCase):
             member.orgname = 'test'
             member.twitter = validTwitter
             self.assertEqual(member.twitter,'https://twitter.com/dog')
-            self.assertTrue(member._validTwitter)
 
     def testSetTwitterNotValid(self):
         invalidTwitters = [
@@ -386,7 +415,7 @@ class TestMember(unittest.TestCase):
             with self.assertRaises(ValueError,msg="Member.twitter for test must be either a Twitter handle, or the URL to a twitter handle - '{twitter}' provided".format(twitter=invalidTwitter)) as ctx:
                 member.twitter = invalidTwitter
 
-            self.assertFalse(member._validTwitter)
+            self.assertIsNone(member.twitter)
 
     def testSetTwitterNull(self):
         member = Member()
@@ -467,10 +496,25 @@ class TestMember(unittest.TestCase):
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
         self.assertFalse(member.isValidLandscapeItem())
+        self.assertIn('orgname',member.invalidLandscapeItemAttributes())
+    
+    def testIsValidLandscapeItemEmptyWebsiteLogo(self):
+        member = Member()
+        member.orgname = 'foo'
+        with self.assertRaises(ValueError):
+            member.website = ''
+        with self.assertRaises(ValueError):
+            with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+                member.logo = ''
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+
+        self.assertFalse(member.isValidLandscapeItem())
+        self.assertIn('logo',member.invalidLandscapeItemAttributes())
+        self.assertIn('website',member.invalidLandscapeItemAttributes())
 
     def testOverlay(self):
         membertooverlay = Member()
-        membertooverlay.orgname = 'test2'
+        membertooverlay.name = 'test2'
         membertooverlay.website = 'https://foo.com'
         with patch("builtins.open", mock_open(read_data="data")) as mock_file:
             membertooverlay.logo = 'gold.svg'
@@ -528,6 +572,41 @@ class TestMember(unittest.TestCase):
         self.assertEqual(member.twitter,'https://twitter.com/mytwitter')
         self.assertIsNone(member.stock_ticker)
         self.assertEqual(member.organization,{})
+
+    def testOverlayItemThrowsException(self):
+        membertooverlay = Member()
+        membertooverlay.name = 'test2'
+        membertooverlay.website = 'https://foo.com'
+        with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+            membertooverlay.logo = 'gold.svg'
+        membertooverlay.membership = 'Gold'
+        
+        membertooverlay.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society-bad'
+        membertooverlay.organization = {'name':'foo'} 
+
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.org'
+        member.membership = 'Silver'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        member.twitter = 'https://twitter.com/mytwitter'
+        member.stock_ticker = None
+
+        with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+            membertooverlay.overlay(member)
+
+    @responses.activate
+    def testHostLogo(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False,suffix='.svg')
+            tmpfilename.write('this is a file')
+            tmpfilename.close()
+
+            member = Member()
+            member.orgname = 'dog'
+            member.logo = SVGLogo(name='dog')
+            member.hostLogo(tempdir)
+            self.assertTrue(os.path.exists(os.path.join(tempdir,'dog.svg')))
 
 class TestMembers(unittest.TestCase):
 
@@ -630,7 +709,7 @@ class TestLFXMembers(unittest.TestCase):
         responses.add(
             method=responses.GET,
             url=members.endpointURL.format(members.project),
-            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"hitachi-systems.com"}]"""
+            body="""[{"ID":"0014100000Te1TUAAZ","Name":"ConsenSys AG","CNCFLevel":"","CrunchBaseURL":"https://crunchbase.com/organization/consensus-systems--consensys-","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"","Website":"consensys.net"},{"ID":"0014100000Te04HAAR","Name":"Hitachi, Ltd.","CNCFLevel":"","LinkedInURL":"www.linkedin.com/company/hitachi-data-systems","Logo":"https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/hitachi-ltd.svg","Membership":{"Family":"Membership","ID":"01t41000002735aAAA","Name":"Premier Membership","Status":"Active"},"Slug":"hyp","StockTicker":"","Twitter":"https://yahoo.com","Website":"hitachi-systems.com"}]"""
             )
         responses.add(
             method=responses.GET,
@@ -1260,10 +1339,6 @@ class TestSVGLogo(unittest.TestCase):
     @responses.activate
     def testSaveLogo(self):
         with tempfile.TemporaryDirectory() as tempdir:
-            tmpfilename = tempfile.NamedTemporaryFile(dir=tempdir,mode='w',delete=False,suffix='.svg')
-            tmpfilename.write('')
-            tmpfilename.close()
-
             self.assertEqual(SVGLogo(contents="this is a file").save('dog',tempdir),'dog.svg')
     
     @responses.activate
@@ -1371,7 +1446,18 @@ class TestLFXProjects(unittest.TestCase):
     @responses.activate
     def testLoadData(self):
         members = LFXProjects(project='aswf',loadData=False)
-        
+       
+        responses.add(
+            method=responses.GET,
+            url=members.singleSlugEndpointURL.format('aswfs'),
+            json={
+              "Data": [ ],
+              "Metadata": {
+                "Offset": 0,
+                "PageSize": 100,
+                "TotalSize": 0
+              }
+            })
         responses.add(
             method=responses.GET,
             url=members.singleSlugEndpointURL.format(members.project),
@@ -1447,7 +1533,7 @@ class TestLFXProjects(unittest.TestCase):
                         "IndustrySector": "Motion Pictures",
                         "Name": "OpenTimelineIO",
                         "ParentID": "a09410000182dD2AAI",
-                        "ParentSlug": "aswf",
+                        "ParentSlug": "aswfs",
                         "ProjectID": "a092M00001If9uZQAR",
                         "ProjectLogo": "https://lf-master-project-logos-prod.s3.us-east-2.amazonaws.com/open-timeline-io.svg",
                         "ProjectType": "Project",
@@ -1472,13 +1558,34 @@ class TestLFXProjects(unittest.TestCase):
                         "ParentSlug": "aswf",
                         "ProjectID": "a092M00001If9ujQAB",
                         "ProjectType": "Project",
-                        "RepositoryURL": "https://github.com/AcademySoftwareFoundation/openexr",
                         "Slug": "openexr",
                         "StartDate": "2020-04-24",
                         "Status": "Active",
                         "TechnologySector": "Web & Application Development;Visual Effects",
                         "TestRecord": False,
-                        "Website": "https://www.openexr.com/"
+                    },
+                    {
+                        "AutoJoinEnabled": False,
+                        "Description": "The mission of the Project is to develop an open-source interoperability standard for tools and content management systems used in media production.",
+                        "DisplayOnWebsite": True,
+                        "HasProgramManager": False,
+                        "Industry": [
+                            "Motion Pictures"
+                        ],
+                        "IndustrySector": "",
+                        "Name": "OpenAssetIO",
+                        "ParentID": "a09410000182dD2AAI",
+                        "ProjectID": "a092M00001L17vCQAR",
+                        "ProjectLogo": "https://lf-master-project-logos-prod.s3.us-east-2.amazonaws.com/openassetio.svg",
+                        "ProjectType": "Project",
+                        "RepositoryURL": "https://github.com/OpenAssetIO",
+                        "Slug": "openassetio",
+                        "StartDate": "2022-11-01",
+                        "Status": "Active",
+                        "TechnologySector": "Visual Effects",
+                        "TestRecord": False,
+                        "Twitter": "https://yahoo.com",
+                        "Website": "openassetio.org"
                     },
                     {
                         "AutoJoinEnabled": False,
@@ -1501,6 +1608,30 @@ class TestLFXProjects(unittest.TestCase):
                         "TechnologySector": "Visual Effects",
                         "TestRecord": False,
                         "Website": "openassetio.org"
+                    },
+                    {
+                        "AutoJoinEnabled": True,
+                        "Description": "The mission of the Academy Software Foundation (ASWF) is to increase the quality and quantity of contributions to the content creation industry’s open source software base; to provide a neutral forum to coordinate cross-project efforts; to provide a common build and test infrastructure; and to provide individuals and organizations a clear path to participation in advancing our open source ecosystem.",
+                        "DisplayOnWebsite": True,
+                        "HasProgramManager": True,
+                        "Industry": [
+                            "Motion Pictures"
+                        ],
+                        "IndustrySector": "Motion Pictures",
+                        "Model": [
+                            "Membership"
+                        ],
+                        "Name": "Academy Software Foundation (ASWF)",
+                        "ProjectID": "a09410000182dD2AAI",
+                        "ProjectLogo": "https://lf-master-project-logos-prod.s3.us-east-2.amazonaws.com/aswf.svg",
+                        "ProjectType": "Project Group",
+                        "RepositoryURL": "https://github.com/academysoftwarefoundation",
+                        "Slug": "aswf",
+                        "StartDate": "2018-08-10",
+                        "Status": "Active",
+                        "TechnologySector": "Visual Effects",
+                        "TestRecord": False,
+                        "Website": "https://www.aswf.io/"
                     }
                 ],
                 "Metadata": {
@@ -1817,6 +1948,7 @@ class TestLFXProjects(unittest.TestCase):
         self.assertEqual(members.members[0].membership,"All")
         self.assertEqual(members.members[0].website,"https://opencue.io/")
         self.assertIsNone(members.members[0].twitter)
+        self.assertIn("Project Group / Academy Software Foundation (ASWF)",members.members[0].second_path)
         self.assertEqual(members.members[1].orgname,"OpenTimelineIO")
         self.assertEqual(members.members[1].crunchbase,"https://www.crunchbase.com/organization/linux-foundation")
         self.assertEqual(members.members[1].logo,"opentimelineio.svg")
@@ -1825,9 +1957,14 @@ class TestLFXProjects(unittest.TestCase):
         self.assertEqual(members.members[1].website,"https://github.com/PixarAnimationStudios/OpenTimelineIO")
         self.assertIsNone(members.members[1].twitter)
         self.assertIn("PMO Managed / All", members.members[1].second_path)
+        self.assertNotIn("Project Group / Academy Software Foundation (ASWF)",members.members[1].second_path)
+        self.assertIsNone(members.members[2].website)
+        self.assertIsNone(members.members[2].repo_url)
         self.assertEqual(members.members[2].logo,"openexr.svg")
         self.assertEqual(members.members[3].repo_url,"https://github.com/OpenAssetIO/OpenAssetIO")
         self.assertEqual(members.members[3].parent_slug,members.project)
+        self.assertIsNone(members.members[3].twitter)
+        self.assertEqual(len(members.members),4)
 
     @responses.activate
     def testLoadDataSkippedRecords(self):

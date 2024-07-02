@@ -62,62 +62,43 @@ class LFXProjects(Members):
                 logger.info("Found LFX Project '{}'".format(member.orgname))
                 member.project_id = record['ProjectID'] if 'ProjectID' in record else None
                 member.slug = record['Slug'] if 'Slug' in record else None
-                extra['accepted'] = record['StartDate'] if 'StartDate' in record else None 
-                # Let's include the root project
+                # Let's not include the root project
                 if member.slug == self.project:
                     continue
+                member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
+                extra['accepted'] = record['StartDate'] if 'StartDate' in record else None 
                 member.description = record['Description'] if 'Description' in record else None
                 try:
                     member.website = record['Website'] if 'Website' in record else None
-                except (ValueError,KeyError) as e:
+                except ValueError as e:
                     logger.info("{} - try to add RepositoryURL instead".format(e))
                     try:
                         member.website = record['RepositoryURL'] if 'RepositoryURL' in record else None
-                    except (ValueError,KeyError) as e:
-                        logger.warning(e)
-                try:
-                    member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
-                except (ValueError,KeyError) as e:
-                    logger.warning(e)
-                try:
-                    member.parent_slug = record['ParentSlug'] 
-                    if self.addParentProject:
-                        parentName = self.lookupParentProjectNameBySlug(member.parent_slug)
-                        if parentName:
-                            second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
-                except (ValueError,KeyError) as e:
-                    logger.warning(e)
-                    member.parent_slug = self.project
-                try:
-                    member.logo = record['ProjectLogo'] if 'ProjectLogo' in record else None
-                except (ValueError,KeyError) as e:
-                    logger.info("{} - will try to create text logo".format(e))
-                    try:
-                        member.logo = SVGLogo(name=member.orgname)
                     except ValueError as e:
                         logger.warning(e)
+                member.parent_slug = record['ParentSlug'] if 'ParentSlug' in record else self.project 
+                if self.addParentProject:
+                    parentName = self.lookupParentProjectNameBySlug(member.parent_slug)
+                    if parentName:
+                        second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
+                try:
+                    member.logo = record['ProjectLogo'] if 'ProjectLogo' in record else None
+                except ValueError as e:
+                    logger.info("{} - will try to create text logo".format(e))
+                    member.logo = SVGLogo(name=member.orgname)
                 member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else self.defaultCrunchbase
                 try:
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
                     logger.warning(e)
                 if self.addPMOManagedStatus and 'HasProgramManager' in record and record['HasProgramManager']:
-                    try:
-                        second_path.append('PMO Managed / All')
-                    except (ValueError,KeyError) as e:
-                        logger.warning(e)
+                    second_path.append('PMO Managed / All')
                 if self.addIndustrySector and 'IndustrySector' in record and record['IndustrySector'] != '':
-                    try:
-                        second_path.append('Industry / {}'.format(record['IndustrySector'].replace("/",":")))
-                    except (ValueError,KeyError) as e:
-                        logger.warning(e)
+                    second_path.append('Industry / {}'.format(record['IndustrySector'].replace("/",":")))
                 if self.addTechnologySector and 'TechnologySector' in record and record['TechnologySector'] != '':
-                    try:
-                        sectors = record['TechnologySector'].split(";")
-                        for sector in sectors:
-                            second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
-                    except (ValueError,KeyError) as e:
-                        logger.warning(e)
+                    sectors = record['TechnologySector'].split(";")
+                    for sector in sectors:
+                        second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
                 member.extra = extra
                 member.second_path = second_path
                 self.members.append(member)

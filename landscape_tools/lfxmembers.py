@@ -48,10 +48,7 @@ class LFXMembers(Members):
                     member.logo = record['Logo'] if 'Logo' in record else None
                 except ValueError as e:
                     logger.info("{} - will try to create text logo".format(e))
-                    try:
-                        member.logo = SVGLogo(name=member.orgname)
-                    except ValueError as e:
-                        logger.warning(e)
+                    member.logo = SVGLogo(name=member.orgname)
                 try:
                     member.crunchbase = record['CrunchBaseURL'] if 'CrunchBaseURL' in record else None
                 except ValueError as e:
