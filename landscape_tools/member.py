@@ -133,9 +133,8 @@ class Member:
         elif ( urlparse(linkedin).netloc == 'linkedin.com' or urlparse(linkedin).netloc == 'www.linkedin.com' ):
             self.__linkedin = "https://www.linkedin.com{}".format(urlparse(linkedin).path)
         else:
-            raise ValueError("Member.linkedin for '{orgname}' must be set to a valid LinkedIn URL - '{linkedin}' provided".format(linkedin=linkedin,orgname=self.orgname))
             self.__linkedin = None
-
+            raise ValueError("Member.linkedin for '{orgname}' must be set to a valid LinkedIn URL - '{linkedin}' provided".format(linkedin=linkedin,orgname=self.orgname))
 
     @property
     def crunchbase(self):
@@ -148,8 +147,8 @@ class Member:
         elif crunchbase and ( urlparse(crunchbase).netloc == 'crunchbase.com' or urlparse(crunchbase).netloc == 'www.crunchbase.com' ) and urlparse(crunchbase).path.split("/")[1] == 'organization':
             self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
         else:
-            raise ValueError("Member.crunchbase for '{orgname}' must be set to a valid Crunchbase URL - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
             self.__crunchbase = None
+            raise ValueError("Member.crunchbase for '{orgname}' must be set to a valid Crunchbase URL - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
 
     @property
     def website(self):
