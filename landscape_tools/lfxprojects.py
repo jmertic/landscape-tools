@@ -37,7 +37,7 @@ class LFXProjects(Members):
         self.processConfig(config)
         super().__init__(loadData)
     
-    def processConfig(self, config: type[Config] = None, baseDir = "."):
+    def processConfig(self, config: type[Config] = None):
         if config:
             self.project = config.slug
             self.addTechnologySector = config.projectsAddTechnologySector
