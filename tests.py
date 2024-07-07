@@ -1230,6 +1230,8 @@ landscape:
             self.assertEqual(landscape.landscapeItems[0]['name'],"Good")
     
     def testAddItemToLandscape(self):
+        members = LFXMembers(loadData=False)
+        
         member = Member()
         member.orgname = 'test'
         member.website = 'https://foo.com'
@@ -1238,8 +1240,16 @@ landscape:
         member.membership = 'Premier Membership'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
         member.repo_url = "https://github.com/foo/bar"
-
-        members = LFXMembers(loadData=False)
+        members.members.append(member)
+        
+        member = Member()
+        member.orgname = 'test2'
+        member.website = 'https://foo.com'
+        with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+            member.logo = 'Gold.svg'
+        member.membership = 'Premiere Membership'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        member.repo_url = "https://github.com/foo/bar"
         members.members.append(member)
 
         landscape = LandscapeOutput(config=Config(),newLandscape=True)
@@ -1248,6 +1258,12 @@ landscape:
 
         self.assertEqual(landscape.landscapeItems[0]['name'],'Premier')
         self.assertEqual(landscape.landscapeItems[0]['items'][0]['name'],"test")
+        self.assertEqual(landscape.landscapeItems[1]['name'],'General')
+        self.assertEqual(0,len(landscape.landscapeItems[1]['items']))
+        self.assertEqual(2,len(landscape.landscapeItems))
+        self.assertEqual(1,len(landscape.landscapeItems[0]['items']))
+        self.assertEqual(1,landscape.itemsAdded)
+        self.assertEqual(1,landscape.itemsErrors)
 
     def testLoadLandscapeReset(self):
         testlandscape = """

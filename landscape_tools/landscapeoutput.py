@@ -162,7 +162,7 @@ class LandscapeOutput:
                     foundCategory = True
                     # Write out to missing.csv if it's missing key parameters
                     if not member.isValidLandscapeItem():
-                        logger.warn("Not adding '{}' to Landscape - Missing key attributes {}".format(member.orgname,",".join(member.invalidLandscapeItemAttributes())))
+                        logger.warning("Not adding '{}' to Landscape - Missing key attributes {}".format(member.orgname,",".join(member.invalidLandscapeItemAttributes())))
                         self.writeMissing(
                             member.orgname,
                             member.website
@@ -176,7 +176,7 @@ class LandscapeOutput:
                         landscapeItemSubcategory['items'].append(member.toLandscapeItemAttributes())
                     break
             if not foundCategory:
-                logger.warn("Not adding '{}' to Landscape - SubCategory '{}' not found".format(member.orgname,member.membership))
+                logger.warning("Not adding '{}' to Landscape - SubCategory '{}' not found".format(member.orgname,member.membership))
                 self.writeMissing(
                     member.orgname,
                     member.website
