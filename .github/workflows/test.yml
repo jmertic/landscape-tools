@@ -37,7 +37,7 @@ jobs:
         poetry install --with test
     - name: Run tests
       run: |
-        poetry run coverage run tests.py -b
+        poetry run coverage run --branch tests.py -b
         poetry run coverage xml
     - name: Save debug.log file
       uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
