@@ -64,17 +64,22 @@ class Member:
             repo_url = url_normalize(repo_url, default_scheme='https')
 
             if self._isGitHubRepo(repo_url):
-                logging.info("{} is determined to be a GitHub Repo for orgname '{}'".format(repo_url,self.orgname))
+                logging.info("{} is determined to be a GitHub Repo for '{}'".format(repo_url,self.orgname))
                 # clean up to ensure it's a valid github repo url
                 x = urlparse(repo_url);
                 parts = x.path.split("/");
                 self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
             elif self._isGitHubOrg(repo_url):
-                logging.info("{} is determined to be a GitHub Org for orgname '{}' - finding related GitHub Repo".format(repo_url,self.orgname))
+                logging.info("{} is determined to be a GitHub Org for '{}' - finding related GitHub Repo".format(repo_url,self.orgname))
                 self.project_org = repo_url
                 try:
-                    self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
-                    logging.info("{} is determined to be the associated GitHub Repo for GitHub Org {} for orgname '{}'".format(self.__repo_url,self.project_org,self.orgname))
+                    found_repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
+                    if found_repo_url:
+                        self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url) 
+                        logging.info("{} is determined to be the associated GitHub Repo for GitHub Org {} for '{}'".format(self.__repo_url,self.project_org,self.orgname))
+                    else:
+                        self.__repo_url = repo_url
+                        logging.info("No public repositories found in GitHub Org {} - setting repo_url for '{}' to '{}'".format(self.project_org,self.orgname,self.__repo_url))
                 except ValueError as e:
                     logging.warn(e)
                     self.__repo_url = repo_url
@@ -114,7 +119,7 @@ class Member:
         session = requests_cache.CachedSession('githubapi')
         with session.get(apiEndPoint) as endpointResponse:
             if not endpointResponse.ok or len(endpointResponse.json()) == 0:
-                raise ValueError("Cannot find repos under GitHub Organization '{}' for orgname '{}'".format(url,self.orgname))
+                raise ValueError("Cannot find repos under GitHub Organization '{}' for '{}'".format(url,self.orgname))
              
             return endpointResponse.json()[0]["html_url"]
 
@@ -129,6 +134,9 @@ class Member:
         # See if this is just the short form part of the LinkedIn URL
         elif linkedin.startswith('company'):
             self.__linkedin = "https://www.linkedin.com/{}".format(linkedin)
+        # perhaps they forgot to add the https://
+        elif linkedin.startswith('www.linkedin.com') or linkedin.startswith('linkedin.com'):
+            self.__linkedin = "https://www.linkedin.com{}".format(urlparse(url_normalize(linkedin)).path)
         # If it is a URL, make sure it's properly formed
         elif ( urlparse(linkedin).netloc == 'linkedin.com' or urlparse(linkedin).netloc == 'www.linkedin.com' ):
             self.__linkedin = "https://www.linkedin.com{}".format(urlparse(linkedin).path)

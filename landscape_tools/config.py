@@ -30,6 +30,7 @@ class Config:
     landscapeProjectsSubcategories = [
        {"name": "All", "category": "All"} 
     ]
+    basedir = "."
     landscapefile = 'landscape.yml'
     missingcsvfile = 'missing.csv'
     hostedLogosDir = 'hosted_logos'
@@ -38,11 +39,13 @@ class Config:
     projectsAddIndustrySector = False
     projectsAddPMOManagedStatus = False
     projectsAddParentProject = False
+    projectsDefaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
 
     def __init__(self, config_file: io.TextIOWrapper = None, view = None):
         if config_file:
             data_loaded = ruamel.yaml.YAML(typ='safe', pure=True).load(config_file)
             self.view = view if self._isValidViewOption(view) else Config.view
+            self.basedir = data_loaded['basedir'] if 'basedir' in data_loaded else os.path.dirname(os.path.normpath(config_file.name))
             self.slug = data_loaded['slug'] if 'slug' in data_loaded else Config.slug
             self.project = data_loaded['project'] if 'project' in data_loaded else self._lookupProjectFromSlug(self.slug)
             if not self.slug or not self.project:
@@ -60,7 +63,8 @@ class Config:
             self.projectsAddTechnologySector = data_loaded['projectsAddTechnologySector'] if 'projectsAddTechnologySector' in data_loaded else Config.projectsAddTechnologySector
             self.projectsAddIndustrySector = data_loaded['projectsAddIndustrySector'] if 'projectsAddIndustrySector' in data_loaded else Config.projectsAddIndustrySector
             self.projectsAddPMOManagedStatus = data_loaded['projectsAddPMOManagedStatus'] if 'projectsAddPMOManagedStatus' in data_loaded else Config.projectsAddPMOManagedStatus
-            self.projectsAddParentProject = data_loaded['memberSuffix'] if 'memberSuffix' in data_loaded else Config.memberSuffix
+            self.projectsAddParentProject = data_loaded['projectsAddParentProject'] if 'projectsAddParentProject' in data_loaded else Config.projectsAddParentProject
+            self.projectsDefaultCrunchbase = data_loaded['projectsDefaultCrunchbase'] if 'projectsDefaultCrunchbase' in data_loaded else Config.projectsDefaultCrunchbase
 
     def _isValidViewOption(self,view):
         return view in ['projects','members'] 

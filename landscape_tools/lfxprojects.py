@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from landscape_tools.members import Members
 from landscape_tools.member import Member
 from landscape_tools.svglogo import SVGLogo
+from landscape_tools.config import Config
 
 class LFXProjects(Members):
 
@@ -32,10 +33,18 @@ class LFXProjects(Members):
     addPMOManagedStatus = True
     addParentProject = True
 
-    def __init__(self, project = None, loadData = True):
-        if project:
-            self.project = project
+    def __init__(self, loadData = True, config: type[Config] = None):
+        self.processConfig(config)
         super().__init__(loadData)
+    
+    def processConfig(self, config: type[Config] = None, baseDir = "."):
+        if config:
+            self.project = config.slug
+            self.addTechnologySector = config.projectsAddTechnologySector
+            self.addIndustrySector = config.projectsAddIndustrySector
+            self.addPMOManagedStatus = config.projectsAddPMOManagedStatus
+            self.addParentProject = config.projectsAddParentProject
+            self.defaultCrunchbase = config.projectsDefaultCrunchbase
 
     def loadData(self):
         logger = logging.getLogger()
@@ -61,9 +70,9 @@ class LFXProjects(Members):
                 member.orgname = record['Name'] if 'Name' in record else None
                 logger.info("Found LFX Project '{}'".format(member.orgname))
                 member.project_id = record['ProjectID'] if 'ProjectID' in record else None
-                member.slug = record['Slug'] if 'Slug' in record else None
+                extra['slug'] = record['Slug'] if 'Slug' in record else None
                 # Let's not include the root project
-                if member.slug == self.project:
+                if extra['slug'] == self.project:
                     continue
                 member.repo_url = record['RepositoryURL'] if 'RepositoryURL' in record else None
                 extra['accepted'] = record['StartDate'] if 'StartDate' in record else None 
@@ -105,7 +114,7 @@ class LFXProjects(Members):
 
     def findBySlug(self, slug):
         for member in self.members:
-            if member.slug is not None and member.slug == slug:
+            if member.extra is not None and 'slug' in member.extra and member.extra['slug'] == slug:
                 return member
 
     def lookupParentProjectNameBySlug(self, slug):

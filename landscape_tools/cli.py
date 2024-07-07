@@ -32,17 +32,17 @@ class Cli:
         group.add_argument("-v", "--verbose", dest="verbose", action='store_true', help="Verbose output ( i.e. show all INFO level messages in addition to WARN and above )")
         subparsers = parser.add_subparsers(help='sub-command help')
         
-        buildlandscapemembers_parser = subparsers.add_parser("buildmembers", help="Replace current project members with latest from LFX")
+        buildlandscapemembers_parser = subparsers.add_parser("build_members", help="Replace current items with latest from LFX")
         buildlandscapemembers_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
         buildlandscapemembers_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         buildlandscapemembers_parser.set_defaults(func=self.buildmembers)
         
-        buildlandscapeprojects_parser = subparsers.add_parser("buildprojects", help="Replace current project projects with latest from LFX")
+        buildlandscapeprojects_parser = subparsers.add_parser("build_projects", help="Replace current items with latest from LFX")
         buildlandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
         buildlandscapeprojects_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         buildlandscapeprojects_parser.set_defaults(func=self.buildprojects)
         
-        synclandscapeprojects_parser = subparsers.add_parser("syncprojects", help="Sync current project projects with latest from LFX")
+        synclandscapeprojects_parser = subparsers.add_parser("sync_projects", help="Sync current items with latest from LFX")
         synclandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
         synclandscapeprojects_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         synclandscapeprojects_parser.set_defaults(func=self.syncprojects)
@@ -52,7 +52,12 @@ class Cli:
         maketextlogo_parser.add_argument("--autocrop", dest="autocrop", action='store_true', help="Process logo with autocrop")
         maketextlogo_parser.add_argument("-o", "--output", dest="filename", help="Filename to save created logo to")
         maketextlogo_parser.set_defaults(func=self.maketextlogo)
-        
+
+        makelogo_parser = subparsers.add_parser("makelogo", help="Create a logo based off an existing log with name as a caption")
+        makelogo_parser.add_argument("-c", "--crunchbase", dest="crunchbase", required=True, help="Crunchbase entry to match")
+        makelogo_parser.add_argument("-l", "--baselogo", dest="baselogo", required=True, help="Base logo to add captions to")
+        makelogo_parser.add_argument("-x", "--excludecategory", dest="category", help="Categories to not look in")
+
         args = parser.parse_args()
 
         logging.basicConfig(
@@ -73,42 +78,35 @@ class Cli:
             raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
     
     def buildmembers(self,args):
-        config = Config(args.configfile)
-
-        # load member data sources
-        lfxmembers = LFXMembers(project=config.project)
-
-        landscapeoutput = LandscapeOutput(config, resetCategory=True, baseDir=args.basedir)
-        landscapeoutput.processIntoLandscape(lfxmembers.members)
-        landscapeoutput.updateLandscape()
+        config = Config(args.configfile,view='members')
+        landscapeoutput = LandscapeOutput(config, resetCategory=True)
+        landscapeoutput.addItems(LFXMembers(project=config.project))
+        landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} members and skipped {} members".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))
         logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def buildprojects(self,args):
         config = Config(args.configfile,view='projects')
-
-        lfxprojects = LFXProjects(project=config.slug)
-        landscapeoutput = LandscapeOutput(config, resetCategory=True, baseDir=args.basedir)
-        landscapeoutput.processIntoLandscape(lfxprojects.members)
-        landscapeoutput.updateLandscape()
+        landscapeoutput = LandscapeOutput(config, resetCategory=True)
+        landscapeoutput.addItems(LFXProjects(config=config))
+        landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} projects and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))
         logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def syncprojects(self,args):
         config = Config(args.configfile,view='projects')
-
-        lfxprojects = LFXProjects(project=config.slug)
-        landscapeoutput = LandscapeOutput(config=config, resetCategory=True, baseDir=args.basedir)
-        landscapeoutput.processIntoLandscape(lfxprojects.members)
-        landscapeoutput.updateLandscape()
+        lfxprojects = LFXProjects(config=config)
+        landscapeoutput = LandscapeOutput(config=config, resetCategory=False)
+        landscapeoutput.syncItems(LFXProjects(config=config)) 
+        landscapeoutput.save()
         
-        logging.getLogger().info("Successfully added {} projects and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))
+        logging.getLogger().info("Successfully added {} projects, updated {} projects, and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsUpdated,landscapeoutput.itemsErrors))
         logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def maketextlogo(self,args):
-        svglogo = SVGLogo.createTextLogo(args.orgname)
+        svglogo = SVGLogo(name=args.orgname)
 
         if args.autocrop:
             svglogo.autocrop()
@@ -117,3 +115,16 @@ class Cli:
             svglogo.save(args.filename)
         else:
             print(svglogo)
+
+    def makelogo(self,args):
+        # TODO: create parser for all items in landscape, not just one category
+        landscapeoutput = LandscapeOutput(config=config, resetCategory=True, baseDir=args.basedir)
+
+        for item in items:
+            if os.file.exists(item.logo.filename()) and args.overwrite:
+                svglogo = SVGLogo(url=baselogo)
+                svglogo.caption(item.orgname)
+                item.logo = svglogo
+
+        landscapeoutput.updateLandscape()
+        
