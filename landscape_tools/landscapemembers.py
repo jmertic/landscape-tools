@@ -5,6 +5,9 @@
 #
 # encoding=utf8
 
+import logging
+from contextlib import suppress
+
 ## third party modules
 import ruamel.yaml
 import requests
@@ -26,7 +29,8 @@ class LandscapeMembers(Members):
         super().__init__(loadData)
 
     def loadData(self):
-        print("--Loading other landscape members data--")
+        logger = logging.getLogger()
+        logger.info("Loading other landscape members data")
 
         response = requests.get(self.landscapeListYAML)
         landscapeList = ruamel.yaml.YAML().load(response.content)
@@ -34,16 +38,13 @@ class LandscapeMembers(Members):
         for landscape in landscapeList['landscapes']:
             if landscape['name'] in self.skipLandscapes:
                 continue
-
-            print("Loading "+landscape['name']+"...")
+        
+            logger.info("Loading {}...".format(landscape['name']))
 
             # first figure out where memberships live
             response = requests.get(self.landscapeSettingsYAML.format(repo=landscape['repo']))
-            try:
+            with suppress(Exception):
                 settingsYaml = ruamel.yaml.YAML().load(response.content) 
-            except:
-                # skip if the yaml file cannot be loaded
-                continue
             # skip landscape if not well formed
             if 'global' not in settingsYaml or settingsYaml['global'] is None or 'membership' not in settingsYaml['global']:
                 continue
@@ -59,35 +60,17 @@ class LandscapeMembers(Members):
                 if membershipKey in category['name']:
                     for subcategory in category['subcategories']:
                         for item in subcategory['items']:
-                            if not item.get('crunchbase'):
-                                item['crunchbase'] = ''
                             member = Member()
                             for key, value in item.items():
-                                try:
+                                with suppress(ValueError):
                                     if key != 'enduser':
                                         setattr(member, key, value)
-                                except ValueError as e:
-                                    pass
-                            try:
-                                member.membership = ''
-                            except ValueError as e:
-                                pass
-                            try:
-                                member.orgname = item['name']
-                            except ValueError as e:
-                                pass
-                            try:
+                            member.orgname = item['name'] if 'name' in item else None
+                            member.membership = ''
+                            with suppress(ValueError):
                                 member.website = item['homepage_url']
-                            except ValueError as e:
-                                pass
-                            try:
                                 member.logo = self.normalizeLogo(item['logo'],landscape['repo'])
-                            except ValueError as e:
-                                pass
-                            try:
-                                member.crunchbase = item['crunchbase']
-                            except ValueError as e:
-                                pass
+                                member.crunchbase = item['crunchbase'] if 'crunchbase' in item else None
                             self.members.append(member)
 
     def normalizeLogo(self, logo, landscapeRepo):
