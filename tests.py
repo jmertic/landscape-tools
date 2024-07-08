@@ -1265,6 +1265,61 @@ landscape:
         self.assertEqual(1,landscape.itemsAdded)
         self.assertEqual(1,landscape.itemsErrors)
 
+    def testSyncItemInLandscape(self):
+        members = LFXProjects(loadData=False)
+        
+        member = Member()
+        member.orgname = 'test'
+        member.website = 'https://foo.com'
+        with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+            member.logo = 'Gold.svg'
+        member.membership = 'Premier Membership'
+        member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
+        member.repo_url = "https://github.com/foo/bar"
+        member.extra['slug'] = 'testme'
+        member.extra['artwork_url'] = 'https://google.com/art'
+        members.members.append(member)
+
+        testlandscape = """
+landscape:
+- category:
+  name: Members
+  subcategories:
+  - subcategory:
+    name: Premier
+    items:
+    - item:
+      crunchbase: https://www.crunchbase.com/organization/here-technologies
+      homepage_url: https://foo.com/
+      second_path:
+        - Dog / Dog
+        - Cat / Cat
+      logo: https://raw.githubusercontent.com/ucfoundation/ucf-landscape/master/hosted_logos/here.svg
+      name: HERE Global B.V.
+      twitter: https://twitter.com/here
+      extra:
+        slug: testme
+"""
+        with tempfile.NamedTemporaryFile(mode='w') as tmpfilename:
+            tmpfilename.write(testlandscape)
+            tmpfilename.flush()
+
+            config = Config()
+            config.landscapefile = os.path.basename(tmpfilename.name)
+            config.basedir = os.path.dirname(tmpfilename.name)
+            
+            landscape = LandscapeOutput(config=config, resetCategory=False)
+            with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+                landscape.syncItems(members)
+            self.assertEqual(landscape.landscapeItems[0]['name'],'Premier')
+            self.assertEqual(landscape.landscapeItems[0]['items'][0]['name'],"test")
+            self.assertEqual(landscape.landscapeItems[0]['items'][0]['extra']['artwork_url'],"https://google.com/art")
+            self.assertEqual(landscape.landscapeItems[0]['items'][0]['twitter'],"https://twitter.com/here")
+            self.assertEqual(landscape.landscapeItems[0]['items'][0]['repo_url'],"https://github.com/foo/bar")
+            self.assertIn('Dog / Dog',landscape.landscapeItems[0]['items'][0]['second_path'])
+            self.assertIn('Cat / Cat',landscape.landscapeItems[0]['items'][0]['second_path'])
+            self.assertEqual(1,landscape.itemsUpdated)
+
     def testLoadLandscapeReset(self):
         testlandscape = """
 landscape:

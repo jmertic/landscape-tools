@@ -63,7 +63,7 @@ class LFXMembers(Members):
                     logger.warning(e)
                 self.members.append(member)
 
-    def find(self, org, website, membership):
+    def find(self, org, website, membership = None):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
