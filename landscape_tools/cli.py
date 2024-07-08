@@ -21,10 +21,11 @@ import sys
 
 class Cli:
 
-    _startTime = None
+    _starttime = None
+    _defaultconfigfile = 'config.yml'
 
     def __init__(self):
-        self._startTime = datetime.now()
+        self._starttime = datetime.now()
 
         parser = ArgumentParser("Collection of tools for working with a landscape")
         group = parser.add_mutually_exclusive_group()
@@ -33,17 +34,17 @@ class Cli:
         subparsers = parser.add_subparsers(help='sub-command help')
         
         buildlandscapemembers_parser = subparsers.add_parser("build_members", help="Replace current items with latest from LFX")
-        buildlandscapemembers_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
+        buildlandscapemembers_parser.add_argument("-c", "--config", dest="configfile", default=self._defaultconfigfile, type=FileType('r'), help="name of YAML config file")
         buildlandscapemembers_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         buildlandscapemembers_parser.set_defaults(func=self.buildmembers)
         
         buildlandscapeprojects_parser = subparsers.add_parser("build_projects", help="Replace current items with latest from LFX")
-        buildlandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
+        buildlandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default=self._defaultconfigfile, type=FileType('r'), help="name of YAML config file")
         buildlandscapeprojects_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         buildlandscapeprojects_parser.set_defaults(func=self.buildprojects)
         
         synclandscapeprojects_parser = subparsers.add_parser("sync_projects", help="Sync current items with latest from LFX")
-        synclandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default="config.yml", type=FileType('r'), help="name of YAML config file")
+        synclandscapeprojects_parser.add_argument("-c", "--config", dest="configfile", default=self._defaultconfigfile, type=FileType('r'), help="name of YAML config file")
         synclandscapeprojects_parser.add_argument("-d", "--dir", dest="basedir", default=".", type=self._dir_path, help="path to where landscape directory is")
         synclandscapeprojects_parser.set_defaults(func=self.syncprojects)
         
@@ -70,6 +71,7 @@ class Cli:
         )
 
         args.func(args)
+        logging.getLogger().info("This took {} seconds".format(datetime.now() - self._starttime))
 
     def _dir_path(self,path):
         if os.path.isdir(path):
@@ -84,7 +86,6 @@ class Cli:
         landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} members and skipped {} members".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))
-        logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def buildprojects(self,args):
         config = Config(args.configfile,view='projects')
@@ -93,7 +94,6 @@ class Cli:
         landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} projects and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))
-        logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def syncprojects(self,args):
         config = Config(args.configfile,view='projects')
@@ -102,7 +102,6 @@ class Cli:
         landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} projects, updated {} projects, and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsUpdated,landscapeoutput.itemsErrors))
-        logging.getLogger().info("This took {} seconds".format(datetime.now() - self._startTime))
 
     def maketextlogo(self,args):
         svglogo = SVGLogo(name=args.orgname)
