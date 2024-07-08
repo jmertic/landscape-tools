@@ -97,7 +97,6 @@ class Cli:
 
     def syncprojects(self,args):
         config = Config(args.configfile,view='projects')
-        lfxprojects = LFXProjects(config=config)
         landscapeoutput = LandscapeOutput(config=config, resetCategory=False)
         landscapeoutput.syncItems(LFXProjects(config=config)) 
         landscapeoutput.save()

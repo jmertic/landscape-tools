@@ -102,14 +102,6 @@ class LandscapeOutput:
     def itemsErrors(self):
         return self._itemsErrors
 
-    def writeMissing(self, name, homepage_url):
-        if self._missingcsvfilewriter is None:
-            self._missingcsvfilewriter = csv.writer(open(self.missingcsvfile, mode='w'), delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-            self._missingcsvfilewriter.writerow(['name','homepage_url'])
-
-        self._itemsErrors += 1
-        self._missingcsvfilewriter.writerow([name, homepage_url])
-
     def syncItems(self, members: type[Members], addmissing = True):
         logger = logging.getLogger()
         logger.info("Syncing '{}' items".format(self.landscapeCategory))
@@ -162,11 +154,8 @@ class LandscapeOutput:
                     foundCategory = True
                     # Write out to missing.csv if it's missing key parameters
                     if not member.isValidLandscapeItem():
-                        logger.warning("Not adding '{}' to Landscape - Missing key attributes {}".format(member.orgname,",".join(member.invalidLandscapeItemAttributes())))
-                        self.writeMissing(
-                            member.orgname,
-                            member.website
-                            )
+                        logger.error("Not adding '{}' to Landscape - Missing key attributes {}".format(member.orgname,",".join(member.invalidLandscapeItemAttributes())))
+                        self._itemsErrors += 1
                     # otherwise we can add it
                     else:
                         logger.info("Added '{}' to Landscape in SubCategory '{}'".format(member.orgname,member.membership))
@@ -176,11 +165,8 @@ class LandscapeOutput:
                         landscapeItemSubcategory['items'].append(member.toLandscapeItemAttributes())
                     break
             if not foundCategory:
-                logger.warning("Not adding '{}' to Landscape - SubCategory '{}' not found".format(member.orgname,member.membership))
-                self.writeMissing(
-                    member.orgname,
-                    member.website
-                    )
+                logger.error("Not adding '{}' to Landscape - SubCategory '{}' not found".format(member.orgname,member.membership))
+                self._itemsErrors += 1
 
     def save(self):
         # now write it back
