@@ -11,5 +11,5 @@ ruamel.yaml==0.18.6
 setuptools==70.2.0
 url-normalize==1.4.3
 urllib3==2.2.2
-validators==0.31.0
+validators==0.33.0
 wheel==0.43.0
