@@ -11,6 +11,7 @@ from landscape_tools.lfxprojects import LFXProjects
 from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
 from landscape_tools.svglogo import SVGLogo
+from landscape_tools.tacagendaproject import TACAgendaProject
 
 from datetime import datetime
 from argparse import ArgumentParser,FileType
@@ -99,6 +100,7 @@ class Cli:
         config = Config(args.configfile,view='projects')
         landscapeoutput = LandscapeOutput(config=config, resetCategory=False)
         landscapeoutput.syncItems(LFXProjects(config=config)) 
+        landscapeoutput.syncItems(TACAgendaProject(config=config))
         landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} projects, updated {} projects, and skipped {} projects".format(landscapeoutput.itemsAdded,landscapeoutput.itemsUpdated,landscapeoutput.itemsErrors))

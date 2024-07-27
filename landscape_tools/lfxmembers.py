@@ -13,17 +13,15 @@ import requests
 from landscape_tools.members import Members
 from landscape_tools.member import Member
 from landscape_tools.svglogo import SVGLogo
+from landscape_tools.config import Config
 
 class LFXMembers(Members):
 
-    project = 'tlf' # The Linux Foundation
-
+    project = ''
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active,At Risk' 
-
-    def __init__(self, project = None, loadData = True):
-        if project:
-            self.project = project
-        super().__init__(loadData)
+    
+    def processConfig(self, config: type[Config]):
+        self.project = config.project
 
     def loadData(self):
         logger = logging.getLogger()

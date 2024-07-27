@@ -40,7 +40,7 @@ class LandscapeOutput:
     _itemsUpdated = 0
     _itemsErrors = 0
 
-    def __init__(self, config: type[Config] = None, resetCategory = False, newLandscape = False, load = True):
+    def __init__(self, config: type[Config], resetCategory = False, newLandscape = False, load = True):
         self.processConfig(config)
         if load:
             self.load(resetCategory=resetCategory,newLandscape=newLandscape)
@@ -81,14 +81,13 @@ class LandscapeOutput:
                 if x['name'] == self.landscapeCategory:
                     x['subcategories'] = self.landscapeItems
     
-    def processConfig(self, config: type[Config] = None):
-        if config:
-            self.landscapeCategory = config.landscapeCategory
-            self.landscapeSubcategories = config.landscapeSubcategories
-            self.landscapefile = os.path.join(config.basedir,config.landscapefile)
-            self.missingcsvfile = config.missingcsvfile
-            self.hostedLogosDir = os.path.join(config.basedir,config.hostedLogosDir)
-            self.memberSuffix = config.memberSuffix if config.view == 'members' else self.memberSuffix
+    def processConfig(self, config: type[Config]):
+        self.landscapeCategory = config.landscapeCategory
+        self.landscapeSubcategories = config.landscapeSubcategories
+        self.landscapefile = os.path.join(config.basedir,config.landscapefile)
+        self.missingcsvfile = config.missingcsvfile
+        self.hostedLogosDir = os.path.join(config.basedir,config.hostedLogosDir)
+        self.memberSuffix = config.memberSuffix if config.view == 'members' else self.memberSuffix
 
     @property
     def itemsAdded(self):
@@ -125,13 +124,13 @@ class LandscapeOutput:
                                 if isinstance(value,dict):
                                     landscapeItem[key] = {} if key not in landscapeItem else landscapeItem[key]
                                     for subkey, subvalue in value.items():
-                                        if subkey not in landscapeItem[key] or landscapeItem[key][subkey] != subvalue:
+                                        if subvalue != None and ( subkey not in landscapeItem[key] or landscapeItem[key][subkey] != subvalue ):
                                             logger.info("Setting '{}.{}' for '{}' from '{}' to '{}'".format(key,subkey,landscapeItem['name'],landscapeItem[key][subkey] if subkey in landscapeItem[key] else '',subvalue))
                                             landscapeItem[key][subkey] = subvalue
                                 elif isinstance(value,list) and value != landscapeItem[key] if key in landscapeItem else None:
                                     logger.info("Setting '{}' for '{}' from '{}' to '{}'".format(key,landscapeItem['name'],landscapeItem[key] if key in landscapeItem else '',list(set(value + landscapeItem[key] if key in landscapeItem else []))))
                                     landscapeItem[key] = list(set(value + landscapeItem[key]))
-                                elif value != None and value != landscapeItem[key] if key in landscapeItem else value: 
+                                elif value != None and value != landscapeItem[key] if key in landscapeItem else value:
                                     logger.info("Setting '{}' for '{}' from '{}' to '{}'".format(key,landscapeItem['name'],landscapeItem[key] if key in landscapeItem else '',value))
                                     landscapeItem[key] = value
                                     if key == 'logo':

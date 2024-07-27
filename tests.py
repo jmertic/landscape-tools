@@ -26,6 +26,7 @@ from landscape_tools.landscapemembers import LandscapeMembers
 from landscape_tools.landscapeoutput import LandscapeOutput
 from landscape_tools.svglogo import SVGLogo
 from landscape_tools.lfxprojects import LFXProjects
+from landscape_tools.tacagendaproject import TACAgendaProject
 
 class TestConfig(unittest.TestCase):
 
@@ -620,7 +621,7 @@ class TestMembers(unittest.TestCase):
         member.website = 'https://foo.com'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = Members()
+        members = Members(config=Config())
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website))
@@ -634,14 +635,14 @@ class TestMembers(unittest.TestCase):
         member.website = 'https://foo.com'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = Members()
+        members = Members(config=Config())
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com'))
 
     @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testFindMultiple(self):
-        members = Members()
+        members = Members(config=Config())
         
         member = Member()
         member.orgname = 'test'
@@ -659,7 +660,7 @@ class TestMembers(unittest.TestCase):
     
     @patch("landscape_tools.members.Members.__abstractmethods__", set())
     def testNormalizeCompanyEmptyOrg(self):
-        members = Members(loadData=False)
+        members = Members(config=Config(),loadData=False)
         self.assertEqual(members.normalizeCompany(None),'')
 
     @patch("landscape_tools.members.Members.__abstractmethods__", set())
@@ -670,7 +671,7 @@ class TestMembers(unittest.TestCase):
         ]
 
         for company in companies:
-            members = Members(loadData=False)
+            members = Members(config=Config(),loadData=False)
             self.assertEqual(members.normalizeCompany(company["name"]),company["normalized"])
 
 class TestLFXMembers(unittest.TestCase):
@@ -684,7 +685,7 @@ class TestLFXMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = LFXMembers(loadData=False)
+        members = LFXMembers(config=Config(),loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website,member.membership))
@@ -700,7 +701,7 @@ class TestLFXMembers(unittest.TestCase):
         member.membership = 'Gold'
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
 
-        members = LFXMembers(loadData=False)
+        members = LFXMembers(config=Config(),loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))
@@ -722,7 +723,9 @@ class TestLFXMembers(unittest.TestCase):
             url="https://lf-master-organization-logos-prod.s3.us-east-2.amazonaws.com/consensys_ag.svg",
             body="""<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="-1.99 -1.86 96.85 23.60"><title>Consensys AG logo</title><path fill="#121212" d="M27.5277.00058c-2.4923 0-3.9142 1.41132-3.9142 3.74775l.0006.00057c0 2.26319 1.4218 3.72353 3.8652 3.72353 2.2491 0 3.5615-1.15582 3.7805-2.99336h-1.7019c-.1584 1.04681-.8025 1.67951-2.0665 1.67951-1.3977 0-2.2244-.81495-2.2244-2.42179S26.0084 1.315 27.4914 1.315c1.2156 0 1.8476.6079 2.0175 1.66682h1.6898c-.2189-1.7764-1.3735-2.98124-3.671-2.98124z"/><path fill="#121212" fill-rule="evenodd" d="M35.6106 7.47243c2.3823 0 3.841-1.44823 3.841-3.76044 0-2.4091-1.5924-3.71141-3.841-3.71141-2.3822 0-3.841 1.35133-3.841 3.76043 0 2.40911 1.5924 3.71142 3.841 3.71142zm0-6.15801c1.313 0 2.1881.76651 2.1881 2.44602 0 1.63048-.8025 2.39699-2.1881 2.39699-1.3129 0-2.1881-.81553-2.1881-2.44602 0-1.63048.8026-2.39699 2.1881-2.39699z" clip-rule="evenodd"/><path fill="#121212" d="M41.9675.1217h-1.6287v7.22903h1.6287V2.44659c.4258-.81553 1.0088-1.19273 1.945-1.19273 1.1667 0 1.7624.53581 1.7624 1.70374v4.39256h1.6287V2.72574C47.3036.99778 46.3558 0 44.6782 0c-1.4829 0-2.2976.76708-2.7107 2.04459V.12169zm7.7189 5.01372h-1.7019l.0006.00058c.1821 1.44823 1.264 2.33643 3.5979 2.33643 2.3338 0 3.3184-.96145 3.3184-2.25107 0-1.09468-.5225-1.84965-2.1028-2.03191l-2.176-.2555c-.6441-.07325-.8751-.32875-.8751-.7544 0-.511.3888-.90031 1.6287-.90031 1.2398 0 1.6649.41353 1.7623 1.04623h1.6898C54.6214.95049 53.7336.00115 51.4246.00115c-2.3091 0-3.2453.98568-3.2453 2.2753 0 1.13159.5957 1.81332 2.1881 1.99557l2.0907.24339c.6931.08536.8751.3772.8751.76651 0 .52311-.4741.91242-1.7139.91242s-1.7992-.34086-1.9329-1.05892z"/><path fill="#121212" fill-rule="evenodd" d="M55.5208 3.76044c0 2.11726 1.3129 3.71141 3.7684 3.71141 2.0544 0 3.3184-.97356 3.6831-2.45812h-1.6656c-.2431.71805-.863 1.1437-1.9691 1.1437-1.2278 0-2.0176-.71806-2.1634-2.00768h5.8465C63.0328 1.61837 61.9387 0 59.3013 0c-2.3708 0-3.7805 1.52148-3.7805 3.76044zm5.7859-.71806h-4.1083c.2069-1.15582.9604-1.76429 2.0908-1.76429 1.2882 0 1.9081.69326 2.0175 1.76429z" clip-rule="evenodd"/><path fill="#121212" d="M65.4513.1217h-1.6286v7.22903h1.6286V2.44659c.4258-.81553 1.0088-1.19273 1.945-1.19273 1.1667 0 1.7624.53581 1.7624 1.70374v4.39256h1.6287V2.72574C70.7874.99778 69.8397 0 68.162 0c-1.4829 0-2.2976.76708-2.7107 2.04459V.12169zm7.7189 5.01372h-1.7018l.0005.00058c.1821 1.44823 1.264 2.33643 3.5979 2.33643s3.3184-.96145 3.3184-2.25107c0-1.09468-.5225-1.84965-2.1028-2.03191l-2.176-.2555c-.6441-.07325-.8751-.32875-.8751-.7544 0-.511.3889-.90031 1.6287-.90031s1.665.41353 1.7623 1.04623h1.6898C78.1053.95049 77.2175.00115 74.9084.00115s-3.2453.98568-3.2453 2.2753c0 1.13159.5957 1.81332 2.1881 1.99557l2.0907.24339c.6931.08536.8751.3772.8751.76651 0 .52311-.4741.91242-1.7139.91242s-1.7992-.34086-1.9329-1.05892zm9.9542 3.99172L86.1513.12227h-1.7024l-2.0907 6.32757-2.176-6.32757h-1.7987l2.3702 6.43716h1.5682l-.401 1.22906H79.174v1.33865h3.9504zm4.704-3.99114h-1.7018l.0006.00057c.182 1.44823 1.264 2.33643 3.5978 2.33643 2.3339 0 3.3185-.96144 3.3185-2.25107 0-1.09468-.5226-1.84965-2.1029-2.0319l-2.176-.2555c-.6441-.07325-.8751-.32875-.8751-.7544 0-.511.3889-.90031 1.6287-.90031s1.665.41353 1.7623 1.04623h1.6898C92.7635.95107 91.8757.00173 89.5666.00173s-3.2453.98567-3.2453 2.2753c0 1.13159.5957 1.81331 2.1881 1.99557l2.0907.24339c.6931.08536.8752.37719.8752.7665 0 .52312-.4742.91243-1.714.91243s-1.7992-.34086-1.9329-1.05892z"/><path fill="#121212" fill-rule="evenodd" d="M19.856 10.0614V7.35062h-.0006l.0006-.00057V.12216H9.9277C4.44477.12216 0 4.57182 0 10.0608 0 15.5498 4.44534 20 9.92828 20c5.48292 0 9.92772-4.4497 9.92772-9.9386zM7.67162 5.09148L12.6355.12216v7.22846h7.2199L14.891 12.3222H7.67162V5.09148z" clip-rule="evenodd"/></svg>""")
         
-        members = LFXMembers(loadData = True, project = 'tlf2')
+        config = Config()
+        config.project = 'tlf2'
+        members = LFXMembers(loadData = True, config=config)
         self.assertEqual(members.project,'tlf2')
         self.assertEqual(members.members[0].orgname,"ConsenSys AG")
         self.assertEqual(members.members[0].crunchbase,"https://www.crunchbase.com/organization/consensus-systems--consensys-")
@@ -740,7 +743,9 @@ class TestLFXMembers(unittest.TestCase):
     
     @responses.activate
     def testLoadDataMissingLogo(self):
-        members = LFXMembers(loadData = False)
+        config = Config()
+        config.project = 'tlf'
+        members = LFXMembers(config=config,loadData = False)
         responses.add(
             method=responses.GET,
             url=members.endpointURL.format(members.project),
@@ -765,7 +770,9 @@ class TestLFXMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadDataMissingWebsite(self):
-        members = LFXMembers(loadData = False)
+        config = Config()
+        config.project = 'tlf'
+        members = LFXMembers(config=config,loadData = False)
         responses.add(
             method=responses.GET,
             url=members.endpointURL.format(members.project),
@@ -797,7 +804,9 @@ class TestLFXMembers(unittest.TestCase):
 
     @responses.activate
     def testLoadDataDuplicates(self):
-        members = LFXMembers(loadData = False)
+        config = Config()
+        config.project = 'tlf'
+        members = LFXMembers(config=config,loadData = False)
         responses.add(
             url=members.endpointURL.format(members.project),
             method=responses.GET,
@@ -1230,7 +1239,7 @@ landscape:
             self.assertEqual(landscape.landscapeItems[0]['name'],"Good")
     
     def testAddItemToLandscape(self):
-        members = LFXMembers(loadData=False)
+        members = LFXMembers(loadData=False,config=Config())
         
         member = Member()
         member.orgname = 'test'
@@ -1275,7 +1284,7 @@ landscape:
         self.assertEqual(2,landscape.itemsErrors)
 
     def testSyncItemInLandscape(self):
-        members = LFXProjects(loadData=False)
+        members = LFXProjects(loadData=False,config=Config())
         
         member = Member()
         member.orgname = 'test'
@@ -1525,7 +1534,7 @@ class TestLFXProjects(unittest.TestCase):
         member.website = 'https://foo.com'
         member.extra['slug'] = 'aswf'
 
-        members = LFXProjects(loadData=False)
+        members = LFXProjects(config=Config(),loadData=False)
         members.members.append(member)
 
         self.assertEqual(members.findBySlug('aswf').orgname,'test')
@@ -1541,7 +1550,7 @@ class TestLFXProjects(unittest.TestCase):
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
         member.repo_url = "https://github.com/foo/bar"
 
-        members = LFXProjects(loadData=False)
+        members = LFXProjects(config=Config(),loadData=False)
         members.members.append(member)
 
         self.assertTrue(members.find(member.orgname,member.website))
@@ -1560,7 +1569,7 @@ class TestLFXProjects(unittest.TestCase):
         member.crunchbase = 'https://www.crunchbase.com/organization/visual-effects-society'
         member.repo_url = "https://github.com/foo/bar"
 
-        members = LFXProjects(loadData=False)
+        members = LFXProjects(config=Config(),loadData=False)
         members.members.append(member)
 
         self.assertFalse(members.find('dog','https://bar.com',member.membership))

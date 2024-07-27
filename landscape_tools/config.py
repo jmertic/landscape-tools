@@ -40,6 +40,7 @@ class Config:
     projectsAddPMOManagedStatus = False
     projectsAddParentProject = False
     projectsDefaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
+    tacAgendaProjectUrl = None
 
     def __init__(self, config_file: io.TextIOWrapper = None, view = None):
         if config_file:
@@ -65,6 +66,7 @@ class Config:
             self.projectsAddPMOManagedStatus = data_loaded['projectsAddPMOManagedStatus'] if 'projectsAddPMOManagedStatus' in data_loaded else Config.projectsAddPMOManagedStatus
             self.projectsAddParentProject = data_loaded['projectsAddParentProject'] if 'projectsAddParentProject' in data_loaded else Config.projectsAddParentProject
             self.projectsDefaultCrunchbase = data_loaded['projectsDefaultCrunchbase'] if 'projectsDefaultCrunchbase' in data_loaded else Config.projectsDefaultCrunchbase
+            self.tacAgendaProjectUrl = data_loaded['tacAgendaProjectUrl'] if 'tacAgendaProjectUrl' in data_loaded else Config.tacAgendaProjectUrl
 
     def _isValidViewOption(self,view):
         return view in ['projects','members'] 

@@ -14,6 +14,7 @@ import requests
 
 from landscape_tools.members import Members
 from landscape_tools.member import Member
+from landscape_tools.config import Config
 
 class LandscapeMembers(Members):
 
@@ -26,7 +27,10 @@ class LandscapeMembers(Members):
     def __init__(self, landscapeListYAML = None, loadData = True):
         if landscapeListYAML:
             self.landscapeListYAML = landscapeListYAML
-        super().__init__(loadData)
+        super().__init__(loadData=loadData,config=Config())
+    
+    def processConfig(self, config: type[Config]):
+        return
 
     def loadData(self):
         logger = logging.getLogger()

@@ -33,18 +33,13 @@ class LFXProjects(Members):
     addPMOManagedStatus = True
     addParentProject = True
 
-    def __init__(self, loadData = True, config: type[Config] = None):
-        self.processConfig(config)
-        super().__init__(loadData)
-    
-    def processConfig(self, config: type[Config] = None):
-        if config:
-            self.project = config.slug
-            self.addTechnologySector = config.projectsAddTechnologySector
-            self.addIndustrySector = config.projectsAddIndustrySector
-            self.addPMOManagedStatus = config.projectsAddPMOManagedStatus
-            self.addParentProject = config.projectsAddParentProject
-            self.defaultCrunchbase = config.projectsDefaultCrunchbase
+    def processConfig(self, config: type[Config]):
+        self.project = config.slug
+        self.addTechnologySector = config.projectsAddTechnologySector
+        self.addIndustrySector = config.projectsAddIndustrySector
+        self.addPMOManagedStatus = config.projectsAddPMOManagedStatus
+        self.addParentProject = config.projectsAddParentProject
+        self.defaultCrunchbase = config.projectsDefaultCrunchbase
 
     def loadData(self):
         logger = logging.getLogger()
@@ -69,7 +64,6 @@ class LFXProjects(Members):
                 member.membership = 'All'
                 member.orgname = record['Name'] if 'Name' in record else None
                 logger.info("Found LFX Project '{}'".format(member.orgname))
-                member.project_id = record['ProjectID'] if 'ProjectID' in record else None
                 extra['slug'] = record['Slug'] if 'Slug' in record else None
                 # Let's not include the root project
                 if extra['slug'] == self.project:

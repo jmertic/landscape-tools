@@ -12,15 +12,22 @@ from abc import ABC, abstractmethod
 ## third party modules
 from url_normalize import url_normalize
 
+from landscape_tools.config import Config
+
 #
 # Abstract Members class to normalize the methods used for the other ways of getting a member's info
 #
 class Members(ABC):
 
-    def __init__(self, loadData = False):
+    def __init__(self, config: type[Config], loadData = True):
+        self.processConfig(config)
         self.members = []
         if loadData:
             self.loadData()
+
+    @abstractmethod
+    def processConfig(self, config: type[Config]):
+        pass
 
     @abstractmethod
     def loadData(self):
