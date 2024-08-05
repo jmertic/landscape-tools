@@ -12,4 +12,4 @@ setuptools==71.1.0
 url-normalize==1.4.3
 urllib3==2.2.2
 validators==0.33.0
-wheel==0.43.0
+wheel==0.44.0
