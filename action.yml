@@ -20,6 +20,7 @@ runs:
         token: ${{ env.token }}
         repository: jmertic/landscape-tools
         path: landscape-tools
+        ref: include-projects
     - name: Set up Python 3.x
       uses: actions/setup-python@v5
       with:
