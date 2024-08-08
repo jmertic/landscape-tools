@@ -56,7 +56,7 @@ class TACAgendaProject(Members):
             projectData = json.loads(jsonProjectData)
         except:
             logger.error("Invalid response from gh client: '{}'".format(command.stderr))
-            return
+            return None
 
         for item in projectData['items']:
             if '2-annual-review' not in item['labels']:
