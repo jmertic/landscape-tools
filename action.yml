@@ -37,6 +37,7 @@ runs:
       run: poetry run landscape -v build_members -c ../landscape/config.yml
       env:
         GITHUB_TOKEN: ${{ env.token }}
+        GH_TOKEN: ${{ env.token }}
     - name: Rebuild projects from LFX and other sources
       if: ${{ inputs.project_processing == 'rebuild' }}
       working-directory: ./landscape-tools
@@ -44,6 +45,7 @@ runs:
       run: poetry run landscape -v build_projects -c ../landscape/config.yml
       env:
         GITHUB_TOKEN: ${{ env.token }}
+        GH_TOKEN: ${{ env.token }}
     - name: Sync projects from LFX and other sources
       if: ${{ inputs.project_processing == 'sync' }}
       working-directory: ./landscape-tools
@@ -51,6 +53,7 @@ runs:
       run: poetry run landscape -v sync_projects -c ../landscape/config.yml
       env:
         GITHUB_TOKEN: ${{ env.token }}
+        GH_TOKEN: ${{ env.token }}
     - name: Save missing.csv file
       uses: actions/upload-artifact@v4
       with:
