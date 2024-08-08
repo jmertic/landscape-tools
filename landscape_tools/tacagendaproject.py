@@ -63,17 +63,17 @@ class TACAgendaProject(Members):
             extra = {} 
             extra['annual_review_date'] = item['last Review Date'] if 'last Review Date' in item else None
             extra['slug'] = item['slug'] if 'slug' in item else None
-            if 'slug' in item:
-                extra['dev_stats_url'] = "https://insights.lfx.linuxfoundation.org/foundation/{parent_slug}/overview?project={slug}".format(parent_slug=self.parent_slug,slug=item['slug'])
             extra['annual_review_url'] = item['content']['url']
-            extra['next_annual_review_date'] = item['scheduled Date']
+            extra['next_annual_review_date'] = item['scheduled Date'] if 'scheduled Date' in item else None
             session = requests_cache.CachedSession()
-            with session.get(self.pcc_committee_url.format(project_id=item['pCC Project ID'],committee_id=item['pCC TSC Committee ID'])) as endpointResponse:
-                memberList = endpointResponse.json()
-                for record in memberList['Data']:
-                    if 'role' in record and record['Role'] == 'Chair':
-                        extra['lead'] = '{} {}'.format(extra['FirstName'],extra['LastName'])
-                        break
+            if 'pCC Project ID' in item and 'pCC TSC Committee ID' in item:
+                with session.get(self.pcc_committee_url.format(project_id=item['pCC Project ID'],committee_id=item['pCC TSC Committee ID'])) as endpointResponse:
+                    memberList = endpointResponse.json()
+                    if 'Data' in memberList and memberList['Data']:
+                        for record in memberList['Data']:
+                            if 'Role' in record and record['Role'] == 'Chair':
+                                extra['chair'] = '{} {}'.format(record['FirstName'],record['LastName'])
+                                break
 
             member.extra = extra
             self.members.append(member)

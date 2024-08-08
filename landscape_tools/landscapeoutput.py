@@ -133,8 +133,8 @@ class LandscapeOutput:
                                 elif value != None and value != landscapeItem[key] if key in landscapeItem else value:
                                     logger.info("Setting '{}' for '{}' from '{}' to '{}'".format(key,landscapeItem['name'],landscapeItem[key] if key in landscapeItem else '',value))
                                     landscapeItem[key] = value
-                                    if key == 'logo':
-                                        foundmember.hostLogo(self.hostedLogosDir)
+                        if foundmember.logo:
+                            foundmember.hostLogo(self.hostedLogosDir)
 
         if addmissing:
             self.addItems(members,skipSlugs=foundSlugs)

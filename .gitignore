@@ -198,6 +198,7 @@ Temporary Items
 /*.csv
 /*.txt
 http_cache.sqlite
+!action.yml
 
 # add back in for packaging
 !requirements.txt

@@ -1588,7 +1588,7 @@ class TestLFXProjects(unittest.TestCase):
        
         responses.add(
             method=responses.GET,
-            url=members.singleSlugEndpointURL.format('aswfs'),
+            url=members.singleSlugEndpointUrl.format(slug='aswfs'),
             json={
               "Data": [ ],
               "Metadata": {
@@ -1599,7 +1599,7 @@ class TestLFXProjects(unittest.TestCase):
             })
         responses.add(
             method=responses.GET,
-            url=members.singleSlugEndpointURL.format(members.project),
+            url=members.singleSlugEndpointUrl.format(slug=members.project),
             json={
                 "Data": [
                     {
@@ -2297,7 +2297,6 @@ class TestLFXProjects(unittest.TestCase):
         self.assertIsNone(members.members[2].repo_url)
         self.assertEqual(members.members[2].logo,"openexr.svg")
         self.assertEqual(members.members[3].repo_url,"https://github.com/OpenAssetIO/OpenAssetIO")
-        self.assertEqual(members.members[3].parent_slug,members.project)
         self.assertIsNone(members.members[3].twitter)
         self.assertEqual(len(members.members),4)
 

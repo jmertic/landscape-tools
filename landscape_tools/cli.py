@@ -83,7 +83,7 @@ class Cli:
     def buildmembers(self,args):
         config = Config(args.configfile,view='members')
         landscapeoutput = LandscapeOutput(config, resetCategory=True)
-        landscapeoutput.addItems(LFXMembers(project=config.project))
+        landscapeoutput.addItems(LFXMembers(config=config))
         landscapeoutput.save()
         
         logging.getLogger().info("Successfully added {} members and skipped {} members".format(landscapeoutput.itemsAdded,landscapeoutput.itemsErrors))

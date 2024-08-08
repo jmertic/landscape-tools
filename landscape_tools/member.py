@@ -30,6 +30,7 @@ class Member:
     second_path = []
     organization = {}
     extra = {}
+    project_org = None
     __orgname = None
     __website = None
     __logo = None
@@ -60,38 +61,42 @@ class Member:
         if repo_url == '':
             self.__repo_url = None
         elif repo_url is not None:
-            repo_url = repo_url.rstrip("/")
-            repo_url = url_normalize(repo_url, default_scheme='https')
-
-            if self._isGitHubRepo(repo_url):
-                logging.info("{} is determined to be a GitHub Repo for '{}'".format(repo_url,self.orgname))
-                # clean up to ensure it's a valid github repo url
-                x = urlparse(repo_url);
-                parts = x.path.split("/");
-                self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
-            elif self._isGitHubOrg(repo_url):
+            repo_url = url_normalize(repo_url.rstrip("/"), default_scheme='https')
+            if self._isGitHubOrg(repo_url):
                 logging.info("{} is determined to be a GitHub Org for '{}' - finding related GitHub Repo".format(repo_url,self.orgname))
-                self.project_org = repo_url
                 try:
                     found_repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url)
                     if found_repo_url:
-                        self.__repo_url = self._getPrimaryGitHubRepoFromGitHubOrg(repo_url) 
+                        self.project_org = "https://github.com/{}".format(urlparse(found_repo_url).path.split("/")[1])
+                        self.__repo_url = found_repo_url 
                         logging.info("{} is determined to be the associated GitHub Repo for GitHub Org {} for '{}'".format(self.__repo_url,self.project_org,self.orgname))
                     else:
-                        self.__repo_url = repo_url
-                        logging.info("No public repositories found in GitHub Org {} - setting repo_url for '{}' to '{}'".format(self.project_org,self.orgname,self.__repo_url))
+                        self.project_org = None
+                        self.__repo_url = None
+                        logging.info("No public repositories found in GitHub Org {} - not setting repo_url for '{}'".format(self.project_org,self.orgname))
                 except ValueError as e:
                     logging.warn(e)
-                    self.__repo_url = repo_url
+                    self.project_org = None
+                    self.__repo_url = None
+                    logging.info("No public repositories found in GitHub Org {} - not setting repo_url for '{}'".format(self.project_org,self.orgname))
+            elif self._isGitHubRepo(repo_url) or self._isGitHubURL(repo_url):
+                # clean up to ensure it's a valid github repo url
+                x = urlparse(repo_url)
+                parts = x.path.split("/")
+                self.__repo_url = "https://github.com/{}/{}".format(parts[1],parts[2])
+                logging.info("{} is determined to be a GitHub Repo for '{}'".format(self.__repo_url,self.orgname))
             else:
                 logging.info("{} is determined to be something else".format(repo_url))
                 self.__repo_url = repo_url
 
+    def _isGitHubURL(self, url):
+        return urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com'
+    
     def _isGitHubRepo(self, url):
-        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and len(urlparse(url).path.split("/")) == 3
+        return self._isGitHubURL(url) and len(urlparse(url).path.split("/")) == 3
 
     def _isGitHubOrg(self, url):
-        return ( urlparse(url).netloc == 'www.github.com' or urlparse(url).netloc == 'github.com') and len(urlparse(url).path.split("/")) == 2
+        return self._isGitHubURL(url) and len(urlparse(url).path.split("/")) == 2
 
     def _getPrimaryGitHubRepoFromGitHubOrg(self, url):
         if not self._isGitHubOrg(url):
@@ -153,7 +158,7 @@ class Member:
         if crunchbase == '':
             self.__crunchbase = None
         elif crunchbase and ( urlparse(crunchbase).netloc == 'crunchbase.com' or urlparse(crunchbase).netloc == 'www.crunchbase.com' ) and urlparse(crunchbase).path.split("/")[1] == 'organization':
-            self.__crunchbase = "https://www.crunchbase.com{}".format(urlparse(crunchbase).path)
+            self.__crunchbase = "https://www.crunchbase.com/{}/{}".format(urlparse(crunchbase).path.split('/')[1],urlparse(crunchbase).path.split('/')[2])
         else:
             self.__crunchbase = None
             raise ValueError("Member.crunchbase for '{orgname}' must be set to a valid Crunchbase URL - '{crunchbase}' provided".format(crunchbase=crunchbase,orgname=self.orgname))
@@ -253,6 +258,8 @@ class Member:
                 returnentry['homepage_url'] = self.website
             elif i == 'repo_url' and not self.repo_url:
                 continue
+            elif i == 'project_org' and not self.project_org:
+                continue
             elif i == 'twitter' and not self.twitter:
                 continue
             elif i == 'second_path' and len(self.second_path) == 0:
@@ -268,7 +275,8 @@ class Member:
             logging.getLogger().info("No Crunchbase entry for '{}' - specifying orgname instead".format(self.orgname))
             returnentry['organization'] = {}
             returnentry['organization']['name'] = self.orgname
-            returnentry['organization']['linkedin'] = self.linkedin
+            if self.linkedin:
+                returnentry['organization']['linkedin'] = self.linkedin
             del returnentry['crunchbase']
 
         return returnentry

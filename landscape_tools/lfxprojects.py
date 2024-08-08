@@ -22,7 +22,11 @@ class LFXProjects(Members):
     project = '' 
     defaultCrunchbase = 'https://www.crunchbase.com/organization/linux-foundation'
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?$filter=parentSlug%20eq%20{}&pageSize=2000&orderBy=name'
-    singleSlugEndpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={}' 
+    singleSlugEndpointUrl = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects?slug={slug}' 
+    calendarUrl = 'https://zoom-lfx.platform.linuxfoundation.org/meetings/{slug}'
+    icalUrl = 'https://webcal.prod.itx.linuxfoundation.org/lfx/{project_id}'
+    lfxinsightsUrl = "https://insights.lfx.linuxfoundation.org/foundation/{parent_slug}/overview?project={slug}"
+    artworkRepoUrl = None
 
     defaultCategory = ''
     defaultSubcategory = ''
@@ -40,13 +44,15 @@ class LFXProjects(Members):
         self.addPMOManagedStatus = config.projectsAddPMOManagedStatus
         self.addParentProject = config.projectsAddParentProject
         self.defaultCrunchbase = config.projectsDefaultCrunchbase
+        self.artworkRepoUrl = config.artworkRepoUrl
+        self.projectsFilterByParentSlug = config.projectsFilterByParentSlug
 
     def loadData(self):
         logger = logging.getLogger()
         logger.info("Loading LFX Projects data for {}".format(self.project))
 
         session = requests_cache.CachedSession()
-        with session.get(self.endpointURL.format(self.project)) as endpointResponse:
+        with session.get(self.endpointURL.format(self.project if self.projectsFilterByParentSlug else '')) as endpointResponse:
             memberList = endpointResponse.json()
             for record in memberList['Data']:
                 if 'Website' in record and self.find(record['Name'],record['Website']):
@@ -79,9 +85,8 @@ class LFXProjects(Members):
                         member.website = record['RepositoryURL'] if 'RepositoryURL' in record else None
                     except ValueError as e:
                         logger.warning(e)
-                member.parent_slug = record['ParentSlug'] if 'ParentSlug' in record else self.project 
                 if self.addParentProject:
-                    parentName = self.lookupParentProjectNameBySlug(member.parent_slug)
+                    parentName = self.lookupParentProjectNameBySlug(record['ParentSlug'] if 'ParentSlug' in record else self.project)
                     if parentName:
                         second_path.append('Project Group / {}'.format(parentName.replace("/",":")))
                 try:
@@ -89,7 +94,7 @@ class LFXProjects(Members):
                 except ValueError as e:
                     logger.info("{} - will try to create text logo".format(e))
                     member.logo = SVGLogo(name=member.orgname)
-                member.crunchbase = record['CrunchBaseURL'] if 'CrunchbaseURL' in record else self.defaultCrunchbase
+                member.crunchbase = record['CrunchBaseUrl'] if 'CrunchbaseUrl' in record else self.defaultCrunchbase
                 try:
                     member.twitter = record['Twitter'] if 'Twitter' in record else None
                 except (ValueError,KeyError) as e:
@@ -102,6 +107,11 @@ class LFXProjects(Members):
                     sectors = record['TechnologySector'].split(";")
                     for sector in sectors:
                         second_path.append('Technology Sector / {}'.format(sector.replace("/",":")))
+                extra['dev_stats_url'] = self.lfxinsightsUrl.format(parent_slug=record['ParentSlug'] if 'ParentSlug' in record else self.project,slug=extra['slug'])
+                extra['calendar_url'] = self.calendarUrl.format(slug=extra['slug']) if 'slug' in extra else None
+                extra['ical_url'] = self.icalUrl.format(project_id=record['ProjectID']) if 'ProjectID' in record else None
+                if self.artworkRepoUrl:
+                    extra['artwork_url'] = self.artworkRepoUrl.format(slug=extra['slug']) if 'slug' in extra and self.artworkRepoUrl else None
                 member.extra = extra
                 member.second_path = second_path
                 self.members.append(member)
@@ -114,7 +124,7 @@ class LFXProjects(Members):
     def lookupParentProjectNameBySlug(self, slug):
         session = requests_cache.CachedSession()
         if slug:
-            with session.get(self.singleSlugEndpointURL.format(slug)) as endpointResponse:
+            with session.get(self.singleSlugEndpointUrl.format(slug=slug)) as endpointResponse:
                 parentProject = endpointResponse.json()
                 if len(parentProject['Data']) > 0: 
                     return parentProject['Data'][0]["Name"]
