@@ -74,6 +74,9 @@ class Cli:
         args.func(args)
         logging.getLogger().info("This took {} seconds".format(datetime.now() - self._starttime))
 
+    def run():
+        Cli() 
+
     def _dir_path(self,path):
         if os.path.isdir(path):
             return path
@@ -115,6 +118,8 @@ class Cli:
             svglogo.save(args.filename)
         else:
             print(svglogo)
+
+        return True
 
     def makelogo(self,args):
         # TODO: create parser for all items in landscape, not just one category

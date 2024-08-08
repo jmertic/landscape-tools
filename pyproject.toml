@@ -27,7 +27,7 @@ responses = "^0.25.3"
 build = "^1.2.1"
 
 [tool.poetry.scripts]
-landscape = "landscape_tools.cli:Cli"
+landscape = "landscape_tools.cli:Cli.run"
 
 [build-system]
 requires = ["poetry-core"]
