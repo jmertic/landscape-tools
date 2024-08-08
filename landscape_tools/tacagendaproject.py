@@ -48,13 +48,15 @@ class TACAgendaProject(Members):
             logger.error("Cannot find GitHub Project - ID:{id} Org:{org}".format(id=id,org=org))
             return None
 
-        jsonProjectData = subprocess.run(self.gh_cli_call.format(gh_project_id=self.gh_project_id,gh_org=self.gh_org), shell=True, capture_output=True).stdout
+        command = subprocess.run(self.gh_cli_call.format(gh_project_id=self.gh_project_id,gh_org=self.gh_org), shell=True, capture_output=True)
+        jsonProjectData = command.stdout
 
         csvRows = []
         try:
             projectData = json.loads(jsonProjectData)
         except:
-            logger.error("Invalid response from gh client: '{}'".format(jsonProjectData))
+            logger.error("Invalid response from gh client: '{}'".format(command.stderr))
+            return
 
         for item in projectData['items']:
             if '2-annual-review' not in item['labels']:
