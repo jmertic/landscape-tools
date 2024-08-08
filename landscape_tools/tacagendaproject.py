@@ -51,7 +51,11 @@ class TACAgendaProject(Members):
         jsonProjectData = subprocess.run(self.gh_cli_call.format(gh_project_id=self.gh_project_id,gh_org=self.gh_org), shell=True, capture_output=True).stdout
 
         csvRows = []
-        projectData = json.loads(jsonProjectData)
+        try:
+            projectData = json.loads(jsonProjectData)
+        except:
+            logger.error("Invalid response from gh client: '{}'".format(jsonProjectData))
+
         for item in projectData['items']:
             if '2-annual-review' not in item['labels']:
                 continue
