@@ -17,7 +17,7 @@ runs:
     - name: Checkout landscape-tools
       uses: actions/checkout@v4
       with:
-        token: ${{ inputs.token }}
+        token: ${{ env.token }}
         repository: jmertic/landscape-tools
         path: landscape-tools
     - name: Set up Python 3.x
