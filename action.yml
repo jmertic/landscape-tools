@@ -12,7 +12,6 @@ runs:
   steps:
     - name: Checkout landscape
       uses: actions/checkout@v4
-      shell: bash
       with:
         token: ${{ env.token }}
         repository: ${{ env.repository }}
@@ -20,7 +19,6 @@ runs:
         path: landscape
     - name: Checkout landscape-tools
       uses: actions/checkout@v4
-      shell: bash
       with:
         token: ${{ inputs.token }}
         repository: jmertic/landscape-tools
