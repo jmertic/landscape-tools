@@ -36,21 +36,21 @@ runs:
       shell: bash
       run: poetry run landscape -v build_members -c ../landscape/config.yml
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ env.PAT }}
     - name: Rebuild projects from LFX and other sources
       if: ${{ inputs.project_processing == 'rebuild' }}
       working-directory: ./landscape-tools
       shell: bash
       run: poetry run landscape -v build_projects -c ../landscape/config.yml
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ env.PAT }}
     - name: Sync projects from LFX and other sources
       if: ${{ inputs.project_processing == 'sync' }}
       working-directory: ./landscape-tools
       shell: bash
       run: poetry run landscape -v sync_projects -c ../landscape/config.yml
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ env.PAT }}
     - name: Save missing.csv file
       uses: actions/upload-artifact@v4
       with:
