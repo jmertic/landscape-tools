@@ -1,9 +1,6 @@
 name: Update Landscape from LFX
 description: Update the given landscape from LFx
 inputs:
-  token:
-    description: 'Github PAT'
-    required: true
   project_processing:
     description: "Indicate for project processing, if they should be 'rebuild' or 'sync' ( or 'skip' to not build projects )"
     default: "sync"
