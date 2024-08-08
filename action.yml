@@ -32,17 +32,17 @@ runs:
       working-directory: ./landscape-tools
       run: poetry install
     - name: Build members from LFX
-      working-directory: ./landscape
+      working-directory: ./landscape-tools
       shell: bash
       run: poetry run landscape -v build_members -c ../landscape/config.yml
     - name: Rebuild projects from LFX and other sources
       if: ${{ inputs.project_processing == 'rebuild' }}
-      working-directory: ./landscape 
+      working-directory: ./landscape-tools
       shell: bash
       run: poetry run landscape -v build_projects -c ../landscape/config.yml
     - name: Sync projects from LFX and other sources
       if: ${{ inputs.project_processing == 'sync' }}
-      working-directory: ./landscape 
+      working-directory: ./landscape-tools
       shell: bash
       run: poetry run landscape -v sync_projects -c ../landscape/config.yml
     - name: Save missing.csv file
