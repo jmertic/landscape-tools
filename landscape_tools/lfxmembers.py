@@ -5,27 +5,27 @@
 #
 # encoding=utf8
 
+import logging
+
 # third party modules
 import requests
 
 from landscape_tools.members import Members
 from landscape_tools.member import Member
-
+from landscape_tools.svglogo import SVGLogo
+from landscape_tools.config import Config
 
 class LFXMembers(Members):
 
-    project = 'tlf' # The Linux Foundation
-
+    project = ''
     endpointURL = 'https://api-gw.platform.linuxfoundation.org/project-service/v1/public/projects/{}/members?orderBy=name&status=Active,At Risk' 
-
-    def __init__(self, project = None, loadData = True):
-
-        if project:
-            self.project = project
-        super().__init__(loadData)
+    
+    def processConfig(self, config: type[Config]):
+        self.project = config.project
 
     def loadData(self):
-        print("--Loading LFX Members data--")
+        logger = logging.getLogger()
+        logger.info("Loading LFX Members data")
 
         with requests.get(self.endpointURL.format(self.project)) as endpointResponse:
             memberList = endpointResponse.json()
@@ -35,36 +35,33 @@ class LFXMembers(Members):
                     continue
 
                 member = Member()
-                try:
-                    member.orgname = record['Name']
-                except ValueError as e:
-                    pass
+                member.orgname = record['Name'] if 'Name' in record else None
+                logger.info("Found LFX Member '{}'".format(member.orgname))
+                member.membership = record['Membership']['Name'] if 'Membership' in record and 'Name' in record['Membership'] else None
                 try:
                     member.website = record['Website']
                 except ValueError as e:
-                    pass
+                    logger.warning(e)
                 try:
-                    member.membership = self.__normalizeMembershipName(record['Membership']['Name'])
+                    member.logo = record['Logo'] if 'Logo' in record else None
                 except ValueError as e:
-                    pass
-                if 'Logo' in record:
-                    try:
-                        member.logo = record['Logo']
-                    except ValueError as e:
-                        pass
-                if 'CrunchBaseURL' in record and record['CrunchBaseURL'] != '':
-                    try:
-                        member.crunchbase = record['CrunchBaseURL']
-                    except ValueError as e:
-                        pass
-                if 'Twitter' in record and record['Twitter'] != '':
-                    try:
-                        member.twitter = record['Twitter']
-                    except ValueError as e:
-                        pass
+                    logger.info("{} - will try to create text logo".format(e))
+                    member.logo = SVGLogo(name=member.orgname)
+                try:
+                    member.crunchbase = record['CrunchBaseURL'] if 'CrunchBaseURL' in record else None
+                except ValueError as e:
+                    logger.warning(e)
+                try:
+                    member.twitter = record['Twitter'] if 'Twitter' in record else None
+                except ValueError as e:
+                    logger.warning(e)
+                try:
+                    member.linkedin = record['LinkedInURL'] if 'LinkedInURL' in record else None
+                except ValueError as e:
+                    logger.warning(e)
                 self.members.append(member)
 
-    def find(self, org, website, membership):
+    def find(self, org, website, membership = None):
         normalizedorg = self.normalizeCompany(org)
         normalizedwebsite = self.normalizeURL(website)
 
@@ -74,14 +71,3 @@ class LFXMembers(Members):
                 members.append(member)
 
         return members
-
-    def __normalizeMembershipName(self,name):
-        if name == 'Silver Membership - MPSF':
-            return name
-
-        parts = name.split(" - ")
-        if len(parts) > 1:
-            parts2 = parts[1].split(" (")
-            return parts2[0]
-        
-        return name

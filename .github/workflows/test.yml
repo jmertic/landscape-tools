@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-  pull_request_target:
+  pull_request:
     branches: [ main ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -23,22 +23,31 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
       with:
         egress-policy: audit
-
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - name: Set up Python
-      uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        pip install --no-deps --require-hashes -r requirements.txt
+    - name: Install poetry
+      uses: abatilo/actions-poetry@v2
     - name: Run tests
       run: |
-        coverage run tests.py -b
-        coverage xml
+        poetry run coverage run --branch tests.py -b
+        poetry run coverage xml
+    - name: Save debug.log file
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      if: always()
+      with:
+        name: debug-log 
+        path: ./debug.log
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
       with:
