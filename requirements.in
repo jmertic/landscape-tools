@@ -1,4 +1,4 @@
-build==1.2.1
+build==1.2.2
 click==8.1.7
 coverage==7.6.1
 packaging==24.1
