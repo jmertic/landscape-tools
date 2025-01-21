@@ -271,9 +271,9 @@ requests==2.32.3 \
     #   -r requirements.in
     #   pycrunchbase
     #   responses
-responses==0.25.5 \
-    --hash=sha256:b3e1ae252f69301b84146ff615a869a4182fbe17e8b606f1ac54142515dad5eb \
-    --hash=sha256:e53991613f76d17ba293c1e3cce8af107c5c7a6a513edf25195aafd89a870dd3
+responses==0.25.6 \
+    --hash=sha256:9cac8f21e1193bb150ec557875377e41ed56248aed94e4567ed644db564bacf1 \
+    --hash=sha256:eae7ce61a9603004e76c05691e7c389e59652d91e94b419623c12bbfb8e331d8
     # via -r requirements.in
 ruamel-yaml==0.18.10 \
     --hash=sha256:20c86ab29ac2153f80a428e1254a8adf686d3383df04490514ca3b79a362db58 \

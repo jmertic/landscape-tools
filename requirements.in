@@ -6,7 +6,7 @@ pip-tools==7.4.1
 pycrunchbase==0.3.9
 pyproject_hooks==1.2.0
 requests==2.32.3
-responses==0.25.5
+responses==0.25.6
 ruamel.yaml==0.18.10
 setuptools==75.8.0
 url-normalize==1.4.3
