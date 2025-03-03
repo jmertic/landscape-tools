@@ -1,3 +1,5 @@
+# This repo is deperecated in favor of https://github.com/jmertic/lfx-landscape-tools
+
 # Landscape Tools
 
 [![License](https://img.shields.io/github/license/jmertic/landscape-tools)](LICENSE)
