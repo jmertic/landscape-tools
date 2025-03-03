@@ -8,7 +8,7 @@ pyproject_hooks==1.2.0
 requests==2.32.3
 responses==0.25.6
 ruamel.yaml==0.18.10
-setuptools==75.8.0
+setuptools==75.8.2
 url-normalize==1.4.3
 urllib3==2.3.0
 validators==0.34.0
